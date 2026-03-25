@@ -6,8 +6,8 @@ category: exp
 docname: draft-salsano-srv6-l2-tunneling-latest
 submissiontype: independent
 ipr: trust200902
-area: AREA
-workgroup: SIG on EIP
+# area: AREA
+# workgroup: SIG on EIP
 keyword:
  - SRv6
  - IPv6
@@ -15,12 +15,12 @@ keyword:
  - Tunneling
  - VXLAN
 venue:
-  group: EIP
-  type: SIG
-  mail: eip@cnit.it
-  arch: http://postino.cnit.it/cgi-bin/mailman/private/eip/
-  github: eip-home/srv6-l2-tunneling
-  latest: https://eip-home.github.io/srv6-l2-tunneling/draft-salsano-srv6-l2-tunneling.html
+#  group: EIP
+#  type: SIG
+#  mail: eip@cnit.it
+#  arch: http://postino.cnit.it/cgi-bin/mailman/private/eip/
+  github: "StefanoSalsano/salsano-srv6-l2-tunneling"
+  latest: "https://StefanoSalsano.github.io/salsano-srv6-l2-tunneling/draft-salsano-srv6-l2-tunneling.html"
 
 stand_alone: yes
 smart_quotes: no
