@@ -3,7 +3,7 @@ title: "SRv6 Layer-2 Tunneling with IPv6 Source-Address-Based Service Identifica
 abbrev: "SRv6 L2 Tunneling"
 category: exp
 
-docname: draft-salsano-srv6-l2-tunneling-latest
+docname: draft-salsano-srv6-l2-tunneling-00
 submissiontype: independent
 ipr: trust200902
 area: AREA
@@ -35,8 +35,6 @@ author:
     ins: "A. Mayer"
     organization: "Univ. of Rome Tor Vergata / CNIT / Common Net"
     email: "andrea.mayer@uniroma2.it"
-
-### for help with the syntax, see https://github.com/cabo/kramdown-rfc
 
 normative:
   RFC8200:
@@ -121,8 +119,7 @@ significantly reduces the usable space for SRv6 forwarding semantics.
 
 As a result, SRv6 Layer-2 tunneling lacks a compact and implementation-
 friendly service identification mechanism with feature parity to VXLAN.
-A practical solution should therefore satisfy the following design
-goals:
+A practical solution should therefore satisfy the following design goals:
 
 * preserve the Destination Address primarily for SRv6 endpoint
   identification and behavior selection;
