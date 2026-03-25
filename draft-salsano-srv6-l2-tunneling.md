@@ -3,7 +3,7 @@ title: "SRv6 Layer-2 Tunneling with IPv6 Source-Address-Based Service Identifica
 abbrev: "SRv6 L2 Tunneling"
 category: exp
 
-docname: draft-salsano-srv6-l2-tunneling-00
+docname: draft-salsano-srv6-l2-tunneling-latest
 submissiontype: independent
 ipr: trust200902
 area: AREA
