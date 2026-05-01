@@ -367,6 +367,12 @@ of the 24 least significant bits for service identification MUST NOT
 turn the outer IPv6 Source Address into a purely opaque field with no
 valid source-address semantics.
 
+The upper 104 bits `SA[127:24]` are a regular IPv6 prefix assigned
+to the ingress node, in the sense of {{RFC8200}}. They are not an
+SRv6 SID and MUST NOT be interpreted as a uSID container or
+otherwise subjected to compressed-SID processing such as that
+defined in {{RFC9800}}.
+
 Using the 24 least significant bits of the Source Address provides a
 compact and explicit service identifier without consuming bits from the
 SRv6 Destination Address. This is particularly beneficial in uSID-based
@@ -583,6 +589,77 @@ target different service models, in particular IPv6 VPNs and
 application-aware networking, whereas this document focuses on
 Layer-2 service identification for SRv6 Layer-2 tunnels.
 
+# Design Alternatives Considered {#alternatives}
+
+Several alternative approaches to encoding a 24-bit Layer-2 service
+identifier in an SRv6 packet were considered during the design of
+the mechanism defined in this document. Each is summarized below
+together with the reason why it was not selected.
+
+* IPv6 Flow Label.
+  The 20-bit Flow Label of the outer IPv6 header could in
+  principle carry a service identifier. However, 20 bits do not
+  provide feature parity with the 24-bit VXLAN VNI; furthermore,
+  the Flow Label is also used by the underlay for ECMP-related
+  entropy and load balancing, and overloading it with
+  service-identification semantics would conflict with this
+  established use.
+
+* Segment Routing Header TLV.
+  A Type-Length-Value field in the SRH could carry the service
+  identifier. This approach requires the presence of an SRH on
+  every encapsulated packet, including in deployments that would
+  otherwise not need one, and increases packet header size and
+  parsing complexity in fast-path implementations. It also makes
+  the service identifier accessible only after SRH parsing,
+  complicating ingress-node-only forwarding decisions.
+
+* IPv6 Hop-by-Hop or Destination Options.
+  A new IPv6 extension header option could carry the service
+  identifier, similarly to the IPv6 VPN Service Destination
+  Option {{I-D.ietf-6man-vpn-dest-opt}} and to Application-aware
+  IPv6 Networking {{I-D.li-6man-apn-ipv6-encap}}. While viable,
+  this approach adds an additional header to every encapsulated
+  packet and is known to be problematic in some deployment
+  contexts due to inconsistent extension-header processing along
+  Internet paths, even though the present mechanism is scoped to
+  a limited domain.
+
+* VXLAN-GPE inside SRv6.
+  A VXLAN-GPE encapsulation could be carried as the inner
+  payload of an SRv6 tunnel, preserving the original VNI
+  semantics. This approach achieves feature parity with VXLAN at
+  the cost of double encapsulation, with the corresponding
+  overhead, increased packet size, and reduced effectiveness of
+  compressed-SID encodings.
+
+* Service identifier in the outer IPv6 Destination Address.
+  The 24-bit service identifier could be encoded in the Function
+  or Argument portion of the SRv6 Service SID, as in
+  {{RFC9252}}. This is the existing baseline that the present
+  mechanism is designed to avoid, because it consumes
+  Destination Address space that is particularly scarce in
+  uSID-based deployments {{RFC9800}}.
+
+* Service identifier in the upper bits of the outer IPv6 Source
+  Address.
+  The 24-bit identifier could in principle be encoded in
+  higher-order bits of the Source Address rather than in the
+  least significant 24 bits. This was considered and rejected
+  because it would interfere with prefix-based routing and
+  aggregation of the ingress node prefix, and would not preserve
+  the property that the upper bits remain a regular IPv6 prefix
+  assigned to the ingress node.
+
+The mechanism defined in this document, namely encoding the 24-bit
+service identifier in the 24 least significant bits of the outer
+IPv6 Source Address, was selected because it provides feature
+parity with the 24-bit VXLAN VNI, does not consume Destination
+Address space, does not require an additional extension header,
+preserves a regular IPv6 prefix in the upper 104 bits of the
+Source Address, and is straightforward to implement in dataplanes
+that already handle SRv6 encapsulation.
+
 # Applicability and Deployment Considerations {#applicability}
 
 The mechanism defined in this document is applicable within a
@@ -635,18 +712,58 @@ applied to traffic that leaves or enters the domain, since
 packets carrying the proposed Source Address encoding are not
 expected to cross the boundary.
 
-## Return Reachability and ICMPv6
+## Return Reachability and ICMPv6 {#return-icmpv6}
 
 Because the upper 104 bits of the outer IPv6 Source Address form a
 valid and routable IPv6 prefix assigned to the ingress node,
-return traffic and ICMPv6 messages addressed to the Source Address
-are delivered to the ingress node according to normal IPv6
-forwarding within the limited domain. This includes ICMPv6 error
-messages generated within the underlay, such as Packet Too Big or
-Time Exceeded, that are addressed to the outer IPv6 Source Address
-of the original packet. The handling of such messages by the
-ingress node is implementation-specific and outside the scope of
-this document.
+return traffic and ICMPv6 messages addressed to any address within
+this prefix are delivered to the ingress node according to normal
+IPv6 forwarding within the limited domain.
+
+To preserve return reachability for any value of the 24-bit service
+identifier, the ingress node MUST treat all IPv6 addresses sharing
+the upper 104-bit prefix as locally configured addresses, and MUST
+accept and process IPv6 packets addressed to any of them. In other
+words, the ingress node behaves, for the purpose of receiving
+return traffic, as if the entire /104 prefix were assigned to it.
+ICMPv6 error messages generated within the underlay, such as
+Packet Too Big or Time Exceeded, that are addressed to the outer
+IPv6 Source Address of an encapsulated packet are therefore
+delivered to the ingress node regardless of the value of the lower
+24 bits, and can be associated with the corresponding Layer-2
+service instance through the encoded service identifier.
+
+The detailed handling of such messages by the ingress node,
+including any subsequent action on the encapsulation or on the
+inner-frame size, is implementation-specific and outside the scope
+of this document.
+
+## Path MTU Discovery
+
+The Layer-2 encapsulation defined in this document adds an outer
+IPv6 header and, optionally, a Segment Routing Header to the inner
+Ethernet frame. As with any tunneling mechanism, this can cause
+the encapsulated packet to exceed the Path MTU between the ingress
+and the egress nodes within the limited domain.
+
+When this happens, intermediate routers along the path generate
+ICMPv6 Packet Too Big messages addressed to the outer IPv6 Source
+Address of the encapsulated packet. As discussed in {{return-icmpv6}},
+these messages are delivered to the ingress node regardless of
+the value of the lower 24 bits of the Source Address, because the
+ingress node treats all addresses sharing the allocated 104-bit
+prefix as locally configured.
+
+The detailed handling of received Packet Too Big messages by the
+ingress node, including any association with the corresponding
+Layer-2 service instance and any subsequent action on the
+encapsulation or on the inner Ethernet frame size, is
+implementation-specific and outside the scope of this document.
+As a baseline, operators are expected to provision the underlay
+MTU within the limited domain so that encapsulated packets, sized
+to accommodate the maximum expected inner Ethernet frame plus the
+outer IPv6 and SRH overhead, can traverse the domain without
+fragmentation.
 
 ## Operational Tooling
 
