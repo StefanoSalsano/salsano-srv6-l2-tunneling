@@ -104,6 +104,10 @@ service identifier without consuming Destination Address space.
 The remaining 104 bits of the outer IPv6 Source Address preserve
 normal IPv6 Source Address semantics, so that the resulting address
 remains a valid unicast IPv6 address as required by {{RFC8200}}.
+The size of the proposed identifier matches the 24-bit VXLAN
+Network Identifier, so that existing operational and information
+models that already manage Layer-2 services through 24-bit VNIs
+can be reused over SRv6 without modification.
 
 The mechanism defined in this document is intended for deployment
 within a limited domain, in the sense of {{RFC8799}}, that is,
@@ -134,12 +138,16 @@ overlays.
 SRv6 already defines Layer-2 endpoint behaviors in {{RFC8986}},
 including `End.DT2U` for delivery of decapsulated Ethernet frames
 into a local Ethernet domain through Layer-2 table lookup. These
-behaviors provide the architectural basis for SRv6 Layer-2 overlays.
-However, in current SRv6 practice the identification of the specific
-Layer-2 service instance is typically absorbed into the outer IPv6
-Destination Address, for example through a service uSID at the
-egress node, so that endpoint identification, behavior selection,
-and service-instance identification share the same address.
+behaviors provide the architectural basis for SRv6 Layer-2
+overlays. The signaling of these behaviors as Service SIDs over
+BGP, in particular for SRv6-based EVPN services, is specified in
+{{RFC9252}} and {{RFC9819}}. In current SRv6 practice, following
+this BGP overlay services model, the identification of the
+specific Layer-2 service instance is typically absorbed into the
+outer IPv6 Destination Address, for example through a service uSID
+at the egress node, so that endpoint identification, behavior
+selection, and service-instance identification share the same
+address.
 
 The pressure on the Destination Address has further increased with
 the introduction of compressed SRv6 segment-list encoding mechanisms
@@ -175,6 +183,21 @@ in this document is illustrated in {{fig-overview}}.
                                                     instance
 ~~~
 {: #fig-overview title="Service identification: VXLAN, current SRv6, and this document."}
+
+A practical consequence of this design is feature parity with the
+VXLAN VNI in terms of identifier size and role. Cloud orchestration
+systems and datacenter virtualization platforms, such as OpenStack
+Neutron and Apache CloudStack, today manage Layer-2 services
+through 24-bit VNIs that are stored, signaled, and validated as
+24-bit values across their information models, APIs, and
+configuration databases. The mechanism proposed in this document
+defines a 24-bit SRv6-native Layer-2 service identifier that can
+be mapped one-to-one to such a VNI. This enables SRv6 to be
+adopted as the underlay encapsulation technology in environments
+currently based on VXLAN without requiring changes to the
+orchestration information model, the service-instance APIs, or
+the operational tooling that depends on the 24-bit identifier
+space.
 
 Implementation aspects of an SRv6 Layer-2 overlay using this
 service-identification model, including integration with the local
@@ -218,6 +241,9 @@ A practical solution should therefore satisfy the following design goals:
   identification and behavior selection;
 * provide a compact service identifier comparable in size and role to
   the VXLAN VNI;
+* enable one-to-one reuse of the 24-bit Layer-2 service identifiers
+  managed by existing VXLAN-based cloud orchestration systems,
+  without changes to their underlying information models;
 * avoid excessive consumption of SID space, especially in uSID-based
   deployments;
 * fit naturally into an SRv6 encapsulation model;
@@ -249,8 +275,10 @@ independent of the outer IP addressing.
 ## Tunnel Identification in Current SRv6
 
 In current SRv6 practice, especially when using compressed SID
-representations such as uSID, the decapsulating tunnel endpoint is
-typically identified by a local service uSID.
+representations such as uSID {{RFC9800}}, the decapsulating tunnel
+endpoint is typically identified by a local Service SID, signaled
+over BGP for SRv6-based overlay services as defined in {{RFC9252}}
+and {{RFC9819}}.
 
 A uSID list commonly ends with:
 
@@ -260,8 +288,11 @@ A uSID list commonly ends with:
 
 For example, a service uSID may identify:
 
-* a specific VRF in a decapsulation behavior such as DTx;
-* a specific Layer-2 tunnel context;
+* a specific VRF in a decapsulation behavior such as End.DTx;
+* a specific Layer-2 tunnel context, e.g. through behaviors such as
+  `End.DT2U`, `End.DT2M`, `End.DX2`, or `End.DX2V` as encoded in the
+  SRv6 L2 Service TLV of the BGP Prefix-SID attribute defined in
+  {{RFC9252}};
 * a specific routing adjacency; or
 * another local service instance bound to the node.
 
@@ -269,11 +300,19 @@ In this model, the IPv6 Destination Address is used not only to steer
 the packet to the correct node, but also to identify the local service
 instance to be applied at the endpoint.
 
-This approach is workable, but it has an important limitation. With a
-typical 2-octet uSID granularity, the service-uSID space available at a
-node is on the order of 2^16 values. This space must be shared among all
-local service instances of that node, cumulatively including VRFs,
-Layer-2 tunnels, routing adjacencies, and other local behaviors.
+This approach is workable, but it has an important limitation. The
+SRv6 SID structure defined in {{RFC9252}} splits the SID into
+Locator Block, Locator Node, Function, and Argument fields, with
+sizes signaled by the SRv6 SID Structure Sub-Sub-TLV and bounded
+by the 128-bit address. With a typical 2-octet uSID granularity,
+i.e. a Function Length of 16 bits, the service-uSID space available
+at a node is on the order of 2^16 values. This space must be shared
+among all local service instances of that node, cumulatively
+including VRFs, Layer-2 tunnels, routing adjacencies, and other
+local behaviors. Larger Function or Argument lengths are possible,
+but they consume additional bits of the SID and are constrained by
+the locator allocation and by interoperability considerations such
+as MPLS-Label-field transposition.
 
 As a consequence, the same limited service-uSID space is used both to
 identify the behavior and to distinguish among all concrete service
@@ -284,9 +323,10 @@ consume a substantial fraction of the available SID space.
 
 This is a key difference from VXLAN. In VXLAN, the service identifier is
 carried in a dedicated field outside the outer IP addressing. In current
-SRv6 practice, service-instance identification is typically absorbed
-into the Destination Address semantics, which makes scalable Layer-2
-tunnel identification more difficult.
+SRv6 practice, including the BGP overlay services model of {{RFC9252}},
+service-instance identification is typically absorbed into the
+Destination Address semantics, which makes scalable Layer-2 tunnel
+identification more difficult.
 
 # Source-Address-Based Service Identification
 
@@ -366,9 +406,12 @@ provides the closest functional reference for VXLAN-like Ethernet
 overlays. `End.DT2U` performs decapsulation of an SRv6 packet
 carrying an inner Ethernet frame and delivers the frame into a
 local Ethernet domain through Layer-2 table lookup. In current
-SRv6 practice, the specific Layer-2 service instance associated
-with the decapsulating node is typically identified through the
-Destination Address semantics, for example by using a service uSID.
+SRv6 practice, in particular for SRv6-based EVPN overlay services
+specified in {{RFC9252}} and {{RFC9819}}, the specific Layer-2
+service instance associated with the decapsulating node is
+typically identified through the Destination Address semantics,
+for example by using a service uSID encoded in the Function (and
+optionally Argument) portion of the Service SID.
 
 The `End.DT2U.SA` behavior follows the same overall model of
 Layer-2 decapsulation and delivery into a local Ethernet domain,
@@ -514,17 +557,22 @@ on one side and Layer-2 service identification on the other, but
 they apply a consistent design pattern to the SRv6 Source Address.
 
 Other related work uses different fields of the IPv6 packet header
-to convey service or context information. The IPv6 VPN Service
-Destination Option {{I-D.ietf-6man-vpn-dest-opt}} encodes VPN
-identification in an IPv6 Destination Option, that is, in an
-extension header rather than in an address field.
-Application-aware IPv6 Networking
+to convey service or context information. The most directly
+relevant baseline is the SRv6 BGP overlay services framework
+defined in {{RFC9252}} and complemented by {{RFC9819}}, which
+specifies how Service SIDs for L2 and L3 services, including
+behaviors such as `End.DX2`, `End.DX2V`, `End.DT2U`, and
+`End.DT2M`, are signaled in the BGP Prefix-SID attribute and
+encoded into the outer IPv6 Destination Address according to the
+SRv6 network programming model of {{RFC8986}}, possibly in
+compressed form {{RFC9800}}. In this model, both the endpoint
+and the specific Layer-2 service instance are identified through
+the Destination Address. The IPv6 VPN Service Destination Option
+{{I-D.ietf-6man-vpn-dest-opt}} instead encodes VPN identification
+in an IPv6 Destination Option, that is, in an extension header
+rather than in an address field. Application-aware IPv6 Networking
 {{I-D.li-6man-apn-ipv6-encap}} similarly relies on extension-header
-encapsulation to carry application-aware attributes. SRv6 Services
-{{RFC9252}} and the SRv6 network programming model {{RFC8986}}
-encode service-instance information in the Destination Address
-through the SID structure, possibly in compressed form
-{{RFC9800}}.
+encapsulation to carry application-aware attributes.
 
 These approaches differ from the mechanism defined in this document
 in two main ways. First, they either consume Destination Address
