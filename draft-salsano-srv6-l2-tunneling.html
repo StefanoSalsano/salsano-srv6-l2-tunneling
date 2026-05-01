@@ -12,13 +12,17 @@
 SRv6-based Layer-2 overlay services. However, practical Layer-2
 tunneling over SRv6 still lacks a simple and efficient service
 identification model comparable to the VXLAN VNI. This limitation is
-particularly relevant in uSID-based deployments, where destination-
-address space is a scarce resource and cannot be consumed freely for
+particularly relevant in uSID-based deployments, where Destination
+Address space is a scarce resource and cannot be consumed freely for
 per-service identification. 
        This document proposes an SRv6 Layer-2 tunneling approach in which a
-24-bit service identifier is encoded in the outer IPv6 source address.
-This preserves destination-address space for SRv6 steering while
-enabling VXLAN-like identification of Layer-2 overlay services. 
+24-bit Layer-2 service identifier is encoded in the 24 least
+significant bits of the outer IPv6 Source Address, while the
+remaining 104 bits preserve normal IPv6 Source Address semantics.
+This preserves Destination Address space for SRv6 steering while
+enabling VXLAN-like identification of Layer-2 overlay services. The
+mechanism is intended for deployment within a single administrative
+limited domain. 
     " name="description">
 <meta content="xml2rfc 3.33.0" name="generator">
 <meta content="SRv6" name="keyword">
@@ -1103,13 +1107,17 @@ svg :is([fill="white"], [fill^="#fff"]) {
 SRv6-based Layer-2 overlay services. However, practical Layer-2
 tunneling over SRv6 still lacks a simple and efficient service
 identification model comparable to the VXLAN VNI. This limitation is
-particularly relevant in uSID-based deployments, where destination-
-address space is a scarce resource and cannot be consumed freely for
+particularly relevant in uSID-based deployments, where Destination
+Address space is a scarce resource and cannot be consumed freely for
 per-service identification.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
 <p id="section-abstract-2">This document proposes an SRv6 Layer-2 tunneling approach in which a
-24-bit service identifier is encoded in the outer IPv6 source address.
-This preserves destination-address space for SRv6 steering while
-enabling VXLAN-like identification of Layer-2 overlay services.<a href="#section-abstract-2" class="pilcrow">¶</a></p>
+24-bit Layer-2 service identifier is encoded in the 24 least
+significant bits of the outer IPv6 Source Address, while the
+remaining 104 bits preserve normal IPv6 Source Address semantics.
+This preserves Destination Address space for SRv6 steering while
+enabling VXLAN-like identification of Layer-2 overlay services. The
+mechanism is intended for deployment within a single administrative
+limited domain.<a href="#section-abstract-2" class="pilcrow">¶</a></p>
 </section>
 <section class="note rfcEditorRemove" id="section-note.1">
       <h2 id="name-about-this-document">
@@ -1200,27 +1208,47 @@ enabling VXLAN-like identification of Layer-2 overlay services.<a href="#section
             <p id="section-toc.1-1.8.1"><a href="#section-8" class="auto internal xref">8</a>.  <a href="#name-decapsulation-procedure" class="internal xref">Decapsulation Procedure</a></p>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9">
-            <p id="section-toc.1-1.9.1"><a href="#section-9" class="auto internal xref">9</a>.  <a href="#name-security-considerations" class="internal xref">Security Considerations</a></p>
+            <p id="section-toc.1-1.9.1"><a href="#section-9" class="auto internal xref">9</a>.  <a href="#name-related-work" class="internal xref">Related Work</a></p>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10">
-            <p id="section-toc.1-1.10.1"><a href="#section-10" class="auto internal xref">10</a>. <a href="#name-iana-considerations" class="internal xref">IANA Considerations</a></p>
-</li>
-          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11">
-            <p id="section-toc.1-1.11.1"><a href="#section-11" class="auto internal xref">11</a>. <a href="#name-references" class="internal xref">References</a></p>
+            <p id="section-toc.1-1.10.1"><a href="#section-10" class="auto internal xref">10</a>. <a href="#name-applicability-and-deploymen" class="internal xref">Applicability and Deployment Considerations</a></p>
 <ul class="compact toc ulBare ulEmpty">
-<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.1">
-                <p id="section-toc.1-1.11.2.1.1"><a href="#section-11.1" class="auto internal xref">11.1</a>.  <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10.2.1">
+                <p id="section-toc.1-1.10.2.1.1"><a href="#section-10.1" class="auto internal xref">10.1</a>.  <a href="#name-source-address-allocation" class="internal xref">Source Address Allocation</a></p>
 </li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.2">
-                <p id="section-toc.1-1.11.2.2.1"><a href="#section-11.2" class="auto internal xref">11.2</a>.  <a href="#name-informative-references" class="internal xref">Informative References</a></p>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10.2.2">
+                <p id="section-toc.1-1.10.2.2.1"><a href="#section-10.2" class="auto internal xref">10.2</a>.  <a href="#name-source-address-validation-a" class="internal xref">Source Address Validation and Ingress Filtering</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10.2.3">
+                <p id="section-toc.1-1.10.2.3.1"><a href="#section-10.3" class="auto internal xref">10.3</a>.  <a href="#name-return-reachability-and-icm" class="internal xref">Return Reachability and ICMPv6</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10.2.4">
+                <p id="section-toc.1-1.10.2.4.1"><a href="#section-10.4" class="auto internal xref">10.4</a>.  <a href="#name-operational-tooling" class="internal xref">Operational Tooling</a></p>
 </li>
             </ul>
 </li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11">
+            <p id="section-toc.1-1.11.1"><a href="#section-11" class="auto internal xref">11</a>. <a href="#name-security-considerations" class="internal xref">Security Considerations</a></p>
+</li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12">
-            <p id="section-toc.1-1.12.1"><a href="#appendix-A" class="auto internal xref"></a><a href="#name-acknowledgments" class="internal xref">Acknowledgments</a></p>
+            <p id="section-toc.1-1.12.1"><a href="#section-12" class="auto internal xref">12</a>. <a href="#name-iana-considerations" class="internal xref">IANA Considerations</a></p>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13">
-            <p id="section-toc.1-1.13.1"><a href="#appendix-B" class="auto internal xref"></a><a href="#name-authors-addresses" class="internal xref">Authors' Addresses</a></p>
+            <p id="section-toc.1-1.13.1"><a href="#section-13" class="auto internal xref">13</a>. <a href="#name-references" class="internal xref">References</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13.2.1">
+                <p id="section-toc.1-1.13.2.1.1"><a href="#section-13.1" class="auto internal xref">13.1</a>.  <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13.2.2">
+                <p id="section-toc.1-1.13.2.2.1"><a href="#section-13.2" class="auto internal xref">13.2</a>.  <a href="#name-informative-references" class="internal xref">Informative References</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.14">
+            <p id="section-toc.1-1.14.1"><a href="#appendix-A" class="auto internal xref"></a><a href="#name-acknowledgments" class="internal xref">Acknowledgments</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.15">
+            <p id="section-toc.1-1.15.1"><a href="#appendix-B" class="auto internal xref"></a><a href="#name-authors-addresses" class="internal xref">Authors' Addresses</a></p>
 </li>
         </ul>
 </nav>
@@ -1246,7 +1274,17 @@ significant bits of the outer IPv6 Source Address. The outer IPv6
 Destination Address continues to identify the remote endpoint and
 the SRv6 behavior to be executed, following normal SRv6 processing,
 while the outer IPv6 Source Address carries a compact, VXLAN-like
-service identifier without consuming Destination Address space.<a href="#section-1-2" class="pilcrow">¶</a></p>
+service identifier without consuming Destination Address space.
+The remaining 104 bits of the outer IPv6 Source Address preserve
+normal IPv6 Source Address semantics, so that the resulting address
+remains a valid unicast IPv6 address as required by <span>[<a href="#RFC8200" class="cite xref">RFC8200</a>]</span>.<a href="#section-1-2" class="pilcrow">¶</a></p>
+<p id="section-1-3">The mechanism defined in this document is intended for deployment
+within a limited domain, in the sense of <span>[<a href="#RFC8799" class="cite xref">RFC8799</a>]</span>, that is,
+within a set of nodes and links under a single administrative
+authority where consistent treatment of the proposed Source Address
+encoding can be ensured by the operator. The applicability and the
+operational considerations associated with this scoping are
+discussed in <a href="#applicability" class="auto internal xref">Section 10</a>.<a href="#section-1-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="scenario-and-motivation">
@@ -1695,58 +1733,188 @@ local Layer-2 service instance, the packet MUST be discarded.<a href="#section-8
 for this case are left for future versions of this document.<a href="#section-8-9" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="security-considerations">
+<div id="related-work">
 <section id="section-9">
-      <h2 id="name-security-considerations">
-<a href="#section-9" class="section-number selfRef">9. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
+      <h2 id="name-related-work">
+<a href="#section-9" class="section-number selfRef">9. </a><a href="#name-related-work" class="section-name selfRef">Related Work</a>
       </h2>
-<p id="section-9-1">The mechanism defined in this document uses the 24 least significant
-bits of the outer IPv6 Source Address to identify the Layer-2 service
-instance associated with a tunneled frame.<a href="#section-9-1" class="pilcrow">¶</a></p>
-<p id="section-9-2">As a consequence, unauthorized modification of the outer IPv6 Source
-Address may cause a packet to be associated with the wrong Layer-2
-service instance at the decapsulating node. This can result in traffic
-misdelivery across Layer-2 services or bridge domains.<a href="#section-9-2" class="pilcrow">¶</a></p>
-<p id="section-9-3">For this reason, the mechanism defined in this document is primarily
-intended for deployment in controlled or limited domains, where the
-operator can manage protocol support, address assignment, and trust
-relationships among participating nodes.<a href="#section-9-3" class="pilcrow">¶</a></p>
-<p id="section-9-4">The upper 104 bits of the outer IPv6 Source Address are required to
-preserve normal IPv6 Source Address semantics. This helps maintain basic
-operational properties, including return reachability and support for
-operations such as ICMPv6 echo reply processing. However, the use of the
-lower 24 bits as a service identifier may still interact with local
-source-address-based filtering, policy enforcement, or operational
-tooling. Deployments using this mechanism SHOULD ensure that such
-functions are aware of the proposed Source Address encoding.<a href="#section-9-4" class="pilcrow">¶</a></p>
-<p id="section-9-5">The security implications also depend on the control-plane mechanism
-used to assign the 24-bit service identifier and to configure the
-mapping between service identifiers and local Layer-2 service
-instances. Protection of such control-plane mechanisms is outside the
-scope of this document.<a href="#section-9-5" class="pilcrow">¶</a></p>
+<p id="section-9-1">The encoding of service-identification or context information in
+the IPv6 packet header has been explored in several IETF
+specifications and ongoing work, using different mechanisms.<a href="#section-9-1" class="pilcrow">¶</a></p>
+<p id="section-9-2">A directly comparable design pattern is proposed in
+<span>[<a href="#I-D.cheng-spring-srv6-encoding-network-sliceid" class="cite xref">I-D.cheng-spring-srv6-encoding-network-sliceid</a>]</span>, which encodes a
+network slice identifier in the least significant bits of the
+outer IPv6 Source Address of an SRv6 packet. That work shares the
+same architectural choice adopted in this document, namely
+encoding a compact identifier in the lower portion of the Source
+Address while preserving normal IPv6 semantics in the upper bits.
+The two specifications address different problems, network slicing
+on one side and Layer-2 service identification on the other, but
+they apply a consistent design pattern to the SRv6 Source Address.<a href="#section-9-2" class="pilcrow">¶</a></p>
+<p id="section-9-3">Other related work uses different fields of the IPv6 packet header
+to convey service or context information. The IPv6 VPN Service
+Destination Option <span>[<a href="#I-D.ietf-6man-vpn-dest-opt" class="cite xref">I-D.ietf-6man-vpn-dest-opt</a>]</span> encodes VPN
+identification in an IPv6 Destination Option, that is, in an
+extension header rather than in an address field.
+Application-aware IPv6 Networking
+<span>[<a href="#I-D.li-6man-apn-ipv6-encap" class="cite xref">I-D.li-6man-apn-ipv6-encap</a>]</span> similarly relies on extension-header
+encapsulation to carry application-aware attributes. SRv6 Services
+<span>[<a href="#RFC9252" class="cite xref">RFC9252</a>]</span> and the SRv6 network programming model <span>[<a href="#RFC8986" class="cite xref">RFC8986</a>]</span>
+encode service-instance information in the Destination Address
+through the SID structure, possibly in compressed form
+<span>[<a href="#RFC9800" class="cite xref">RFC9800</a>]</span>.<a href="#section-9-3" class="pilcrow">¶</a></p>
+<p id="section-9-4">These approaches differ from the mechanism defined in this document
+in two main ways. First, they either consume Destination Address
+space or require the addition of an IPv6 extension header to carry
+the service identifier, whereas the mechanism defined here reuses
+existing space in the outer IPv6 Source Address. Second, they
+target different service models, in particular IPv6 VPNs and
+application-aware networking, whereas this document focuses on
+Layer-2 service identification for SRv6 Layer-2 tunnels.<a href="#section-9-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="applicability">
+<section id="section-10">
+      <h2 id="name-applicability-and-deploymen">
+<a href="#section-10" class="section-number selfRef">10. </a><a href="#name-applicability-and-deploymen" class="section-name selfRef">Applicability and Deployment Considerations</a>
+      </h2>
+<p id="section-10-1">The mechanism defined in this document is applicable within a
+limited domain, in the sense of <span>[<a href="#RFC8799" class="cite xref">RFC8799</a>]</span>, under a single
+administrative authority. Within such a domain, the operator can
+ensure consistent allocation of IPv6 Source Address prefixes, the
+encoding of the 24-bit service identifier in the lower bits of the
+Source Address, and the corresponding configuration of the
+decapsulation behavior at the egress nodes.<a href="#section-10-1" class="pilcrow">¶</a></p>
+<p id="section-10-2">Packets carrying the proposed Source Address encoding SHOULD NOT
+leave the limited domain in which the encoding is interpreted.
+Nodes at the boundary of the limited domain SHOULD prevent egress
+of packets that rely on this encoding for service identification,
+either by terminating the SRv6 Layer-2 tunnels at the boundary or
+by applying appropriate filtering policies.<a href="#section-10-2" class="pilcrow">¶</a></p>
+<div id="source-address-allocation">
+<section id="section-10.1">
+        <h3 id="name-source-address-allocation">
+<a href="#section-10.1" class="section-number selfRef">10.1. </a><a href="#name-source-address-allocation" class="section-name selfRef">Source Address Allocation</a>
+        </h3>
+<p id="section-10.1-1">To support the proposed encoding, the operator deploying this
+mechanism allocates an IPv6 Source Address prefix to each ingress
+node that performs Layer-2 encapsulation according to this
+document. A natural allocation is a /104 prefix per ingress node,
+or a shorter prefix shared among multiple ingress nodes, so that
+the lower 24 bits remain available to encode the Layer-2 service
+identifier.<a href="#section-10.1-1" class="pilcrow">¶</a></p>
+<p id="section-10.1-2">The chosen prefix MUST be routable within the limited domain so
+that the resulting outer IPv6 Source Address is a valid unicast
+address of the ingress node, in the sense of Section 4.1 of
+<span>[<a href="#RFC8200" class="cite xref">RFC8200</a>]</span>, and so that return traffic and ICMPv6 messages
+addressed to the Source Address can be delivered to the ingress
+node.<a href="#section-10.1-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="source-address-validation-and-ingress-filtering">
+<section id="section-10.2">
+        <h3 id="name-source-address-validation-a">
+<a href="#section-10.2" class="section-number selfRef">10.2. </a><a href="#name-source-address-validation-a" class="section-name selfRef">Source Address Validation and Ingress Filtering</a>
+        </h3>
+<p id="section-10.2-1">The mechanism defined in this document interacts with Source
+Address Validation (SAV) techniques such as ingress filtering
+<span>[<a href="#RFC3704" class="cite xref">RFC3704</a>]</span> and enhanced feasible-path uRPF <span>[<a href="#RFC8704" class="cite xref">RFC8704</a>]</span>. Within
+the limited domain, the operator MUST ensure that the routing
+configuration and the SAV policies are consistent with the use of
+the allocated Source Address prefixes by the ingress nodes. In
+particular, packets sourced by an ingress node from any address
+within its allocated prefix, including those carrying a non-zero
+service identifier in the lower 24 bits, MUST NOT be discarded by
+SAV mechanisms internal to the domain.<a href="#section-10.2-1" class="pilcrow">¶</a></p>
+<p id="section-10.2-2">At the boundary of the limited domain, normal SAV policies may be
+applied to traffic that leaves or enters the domain, since
+packets carrying the proposed Source Address encoding are not
+expected to cross the boundary.<a href="#section-10.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="return-reachability-and-icmpv6">
+<section id="section-10.3">
+        <h3 id="name-return-reachability-and-icm">
+<a href="#section-10.3" class="section-number selfRef">10.3. </a><a href="#name-return-reachability-and-icm" class="section-name selfRef">Return Reachability and ICMPv6</a>
+        </h3>
+<p id="section-10.3-1">Because the upper 104 bits of the outer IPv6 Source Address form a
+valid and routable IPv6 prefix assigned to the ingress node,
+return traffic and ICMPv6 messages addressed to the Source Address
+are delivered to the ingress node according to normal IPv6
+forwarding within the limited domain. This includes ICMPv6 error
+messages generated within the underlay, such as Packet Too Big or
+Time Exceeded, that are addressed to the outer IPv6 Source Address
+of the original packet. The handling of such messages by the
+ingress node is implementation-specific and outside the scope of
+this document.<a href="#section-10.3-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="operational-tooling">
+<section id="section-10.4">
+        <h3 id="name-operational-tooling">
+<a href="#section-10.4" class="section-number selfRef">10.4. </a><a href="#name-operational-tooling" class="section-name selfRef">Operational Tooling</a>
+        </h3>
+<p id="section-10.4-1">Within the limited domain, source-address-based filtering, policy
+enforcement, accounting, and monitoring tools may be exposed to
+outer IPv6 Source Addresses that share a common upper prefix and
+differ in the lower 24 bits according to the encoded Layer-2
+service identifier. Operational tools deployed within the domain
+SHOULD be configured to interpret such addresses consistently with
+the encoding defined in this document, so that packets belonging
+to different Layer-2 service instances are not aggregated or
+distinguished in unexpected ways.<a href="#section-10.4-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="security-considerations">
+<section id="section-11">
+      <h2 id="name-security-considerations">
+<a href="#section-11" class="section-number selfRef">11. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
+      </h2>
+<p id="section-11-1">The mechanism defined in this document uses the 24 least significant
+bits of the outer IPv6 Source Address to identify the Layer-2
+service instance associated with a tunneled frame.<a href="#section-11-1" class="pilcrow">¶</a></p>
+<p id="section-11-2">As a consequence, unauthorized modification of the outer IPv6
+Source Address may cause a packet to be associated with the wrong
+Layer-2 service instance at the decapsulating node. This can
+result in traffic misdelivery across Layer-2 services or bridge
+domains.<a href="#section-11-2" class="pilcrow">¶</a></p>
+<p id="section-11-3">For this reason, the mechanism defined in this document is intended
+for deployment within a limited domain under a single
+administrative authority, as discussed in <a href="#applicability" class="auto internal xref">Section 10</a>.
+Within the limited domain, the operator is expected to protect the
+integrity of the outer IPv6 Source Address against unauthorized
+modification, in order to avoid traffic misdelivery between
+Layer-2 service instances.<a href="#section-11-3" class="pilcrow">¶</a></p>
+<p id="section-11-4">The security implications also depend on the control-plane
+mechanism used to assign the 24-bit service identifier and to
+configure the mapping between service identifiers and local
+Layer-2 service instances. Protection of such control-plane
+mechanisms is outside the scope of this document.<a href="#section-11-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="iana-considerations">
-<section id="section-10">
+<section id="section-12">
       <h2 id="name-iana-considerations">
-<a href="#section-10" class="section-number selfRef">10. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
+<a href="#section-12" class="section-number selfRef">12. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
       </h2>
-<p id="section-10-1">This document proposes a new SRv6 behavior, denoted as <code>End.DT2U.SA</code>.<a href="#section-10-1" class="pilcrow">¶</a></p>
-<p id="section-10-2">If this document is progressed, an IANA allocation will be needed for
-the <code>End.DT2U.SA</code> behavior in the relevant SRv6 behavior registry.<a href="#section-10-2" class="pilcrow">¶</a></p>
-<p id="section-10-3">This document does not request any additional IANA action in this
-version.<a href="#section-10-3" class="pilcrow">¶</a></p>
+<p id="section-12-1">This document proposes a new SRv6 behavior, denoted as <code>End.DT2U.SA</code>.<a href="#section-12-1" class="pilcrow">¶</a></p>
+<p id="section-12-2">If this document is progressed, an IANA allocation will be needed for
+the <code>End.DT2U.SA</code> behavior in the relevant SRv6 behavior registry.<a href="#section-12-2" class="pilcrow">¶</a></p>
+<p id="section-12-3">This document does not request any additional IANA action in this
+version.<a href="#section-12-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="sec-combined-references">
-<section id="section-11">
+<section id="section-13">
       <h2 id="name-references">
-<a href="#section-11" class="section-number selfRef">11. </a><a href="#name-references" class="section-name selfRef">References</a>
+<a href="#section-13" class="section-number selfRef">13. </a><a href="#name-references" class="section-name selfRef">References</a>
       </h2>
 <div id="sec-normative-references">
-<section id="section-11.1">
+<section id="section-13.1">
         <h3 id="name-normative-references">
-<a href="#section-11.1" class="section-number selfRef">11.1. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+<a href="#section-13.1" class="section-number selfRef">13.1. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
         </h3>
 <dl class="references">
 <dt id="RFC8200">[RFC8200]</dt>
@@ -1765,18 +1933,42 @@ version.<a href="#section-10-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="sec-informative-references">
-<section id="section-11.2">
+<section id="section-13.2">
         <h3 id="name-informative-references">
-<a href="#section-11.2" class="section-number selfRef">11.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
+<a href="#section-13.2" class="section-number selfRef">13.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
         </h3>
 <dl class="references">
 <dt id="HYDN-MAITI-2026">[HYDN-MAITI-2026]</dt>
         <dd>
 <span class="refAuthor">Salsano, S.</span>, <span class="refAuthor">Mayer, A.</span>, <span class="refAuthor">Abdelsalam, A.</span>, and <span class="refAuthor">C. Filsfils</span>, <span class="refTitle">"SRv6 Layer-2 Overlays with VXLAN-like Semantics: Linux End.DT2U, the sr6 Device, and Scalable Service Identification"</span>, <time datetime="2026" class="refDate">2026</time>. </dd>
 <dd class="break"></dd>
+<dt id="I-D.cheng-spring-srv6-encoding-network-sliceid">[I-D.cheng-spring-srv6-encoding-network-sliceid]</dt>
+        <dd>
+<span class="refAuthor">Cheng, W.</span>, <span class="refAuthor">Ma, P.</span>, <span class="refAuthor">Ren, F.</span>, <span class="refAuthor">Lin, C.</span>, <span class="refAuthor">Gong, L.</span>, <span class="refAuthor">Zadok, S.</span>, <span class="refAuthor">Wu, M.</span>, and <span class="refAuthor">X. wang</span>, <span class="refTitle">"Encoding Network Slice Identification for SRv6"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-cheng-spring-srv6-encoding-network-sliceid-12</span>, <time datetime="2026-01-13" class="refDate">13 January 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-cheng-spring-srv6-encoding-network-sliceid-12">https://datatracker.ietf.org/doc/html/draft-cheng-spring-srv6-encoding-network-sliceid-12</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="I-D.ietf-6man-vpn-dest-opt">[I-D.ietf-6man-vpn-dest-opt]</dt>
+        <dd>
+<span class="refAuthor">Bonica, R. P.</span>, <span class="refAuthor">Li, X.</span>, <span class="refAuthor">Farrel, A.</span>, <span class="refAuthor">Kamite, Y.</span>, and <span class="refAuthor">L. Jalil</span>, <span class="refTitle">"The IPv6 VPN Service Destination Option"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-6man-vpn-dest-opt-11</span>, <time datetime="2025-05-14" class="refDate">14 May 2025</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-6man-vpn-dest-opt-11">https://datatracker.ietf.org/doc/html/draft-ietf-6man-vpn-dest-opt-11</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="I-D.li-6man-apn-ipv6-encap">[I-D.li-6man-apn-ipv6-encap]</dt>
+        <dd>
+<span class="refAuthor">Li, Z.</span>, <span class="refAuthor">Xie, C.</span>, <span class="refAuthor">Zhang, S.</span>, and <span class="refAuthor">N. Geng</span>, <span class="refTitle">"Application-aware IPv6 Networking (APN6) Encapsulation"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-li-6man-apn-ipv6-encap-01</span>, <time datetime="2025-11-12" class="refDate">12 November 2025</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-li-6man-apn-ipv6-encap-01">https://datatracker.ietf.org/doc/html/draft-li-6man-apn-ipv6-encap-01</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC3704">[RFC3704]</dt>
+        <dd>
+<span class="refAuthor">Baker, F.</span> and <span class="refAuthor">P. Savola</span>, <span class="refTitle">"Ingress Filtering for Multihomed Networks"</span>, <span class="seriesInfo">BCP 84</span>, <span class="seriesInfo">RFC 3704</span>, <span class="seriesInfo">DOI 10.17487/RFC3704</span>, <time datetime="2004-03" class="refDate">March 2004</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc3704">https://www.rfc-editor.org/rfc/rfc3704</a>&gt;</span>. </dd>
+<dd class="break"></dd>
 <dt id="RFC7348">[RFC7348]</dt>
         <dd>
 <span class="refAuthor">Mahalingam, M.</span>, <span class="refAuthor">Dutt, D.</span>, <span class="refAuthor">Duda, K.</span>, <span class="refAuthor">Agarwal, P.</span>, <span class="refAuthor">Kreeger, L.</span>, <span class="refAuthor">Sridhar, T.</span>, <span class="refAuthor">Bursell, M.</span>, and <span class="refAuthor">C. Wright</span>, <span class="refTitle">"Virtual eXtensible Local Area Network (VXLAN): A Framework for Overlaying Virtualized Layer 2 Networks over Layer 3 Networks"</span>, <span class="seriesInfo">RFC 7348</span>, <span class="seriesInfo">DOI 10.17487/RFC7348</span>, <time datetime="2014-08" class="refDate">August 2014</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc7348">https://www.rfc-editor.org/rfc/rfc7348</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8704">[RFC8704]</dt>
+        <dd>
+<span class="refAuthor">Sriram, K.</span>, <span class="refAuthor">Montgomery, D.</span>, and <span class="refAuthor">J. Haas</span>, <span class="refTitle">"Enhanced Feasible-Path Unicast Reverse Path Forwarding"</span>, <span class="seriesInfo">BCP 84</span>, <span class="seriesInfo">RFC 8704</span>, <span class="seriesInfo">DOI 10.17487/RFC8704</span>, <time datetime="2020-02" class="refDate">February 2020</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8704">https://www.rfc-editor.org/rfc/rfc8704</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8799">[RFC8799]</dt>
+        <dd>
+<span class="refAuthor">Carpenter, B.</span> and <span class="refAuthor">B. Liu</span>, <span class="refTitle">"Limited Domains and Internet Protocols"</span>, <span class="seriesInfo">RFC 8799</span>, <span class="seriesInfo">DOI 10.17487/RFC8799</span>, <time datetime="2020-07" class="refDate">July 2020</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8799">https://www.rfc-editor.org/rfc/rfc8799</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC9252">[RFC9252]</dt>
         <dd>
