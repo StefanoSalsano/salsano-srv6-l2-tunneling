@@ -42,8 +42,18 @@ normative:
   RFC8986:
 
 informative:
+  RFC7348:
   RFC9252:
+  RFC9800:
   RFC9819:
+  HYDN-MAITI-2026:
+    title: "SRv6 Layer-2 Overlays with VXLAN-like Semantics: Linux End.DT2U, the sr6 Device, and Scalable Service Identification"
+    author:
+      - name: "Stefano Salsano"
+      - name: "Andrea Mayer"
+      - name: "Ahmed Abdelsalam"
+      - name: "Clarence Filsfils"
+    date: 2026
 
 --- abstract
 
@@ -64,28 +74,90 @@ enabling VXLAN-like identification of Layer-2 overlay services.
 
 # Introduction
 
-Segment Routing over IPv6 (SRv6) defines endpoint behaviors that can be
-used to realize Layer-2 forwarding and overlay services. At the same
-time, VXLAN is widely used for Layer-2 tunneling because it provides a
-simple encapsulation model and a compact 24-bit service identifier, the
-VXLAN Network Identifier (VNI).
-
-In VXLAN, the tunnel endpoint is identified by the outer IP addressing,
-while the VNI identifies the specific Layer-2 service associated with
-the packet. This separation is operationally effective and makes VXLAN
-well suited to Layer-2 overlays.
-
-In SRv6, the outer IPv6 Destination Address and the SID processing
-naturally identify the remote endpoint and the behavior to be executed.
-However, providing an additional VXLAN-like service identifier is less
-straightforward, especially in deployments based on compressed SID
-representations such as uSID, where destination-address space is
+Segment Routing over IPv6 (SRv6) {{RFC8754}} {{RFC8986}} defines
+endpoint behaviors that support Layer-2 forwarding and overlay
+services. However, SRv6 currently lacks a compact and operationally
+explicit service identifier for Layer-2 overlays comparable to the
+24-bit VXLAN Network Identifier (VNI). Encoding such an identifier
+in the SRv6 Destination Address scales poorly, particularly in
+deployments based on compressed SID representations such as uSID,
+where the SID space available after the locator is intrinsically
 limited.
 
-This document proposes an SRv6 Layer-2 tunneling approach in which a
-24-bit service identifier is encoded in the outer IPv6 Source Address.
-This preserves destination-address space for SRv6 steering while
-enabling VXLAN-like identification of Layer-2 services.
+This document defines an SRv6 Layer-2 tunneling approach in which a
+24-bit Layer-2 service identifier is encoded in the 24 least
+significant bits of the outer IPv6 Source Address. The outer IPv6
+Destination Address continues to identify the remote endpoint and
+the SRv6 behavior to be executed, following normal SRv6 processing,
+while the outer IPv6 Source Address carries a compact, VXLAN-like
+service identifier without consuming Destination Address space.
+
+# Scenario and Motivation
+
+This section describes the deployment context that motivates the
+mechanism defined in this document.
+
+Modern Layer-2 overlay deployments, in particular in datacenter
+networks supporting hyperscale and AI-oriented workloads, rely on
+encapsulation technologies that combine a clear separation between
+tunnel-endpoint identification and Layer-2 service identification
+with a compact and explicit identifier for each Layer-2 service
+instance. VXLAN {{RFC7348}} is the most widespread example of this
+operational model: the outer IP addressing identifies the remote
+tunnel endpoint, while a 24-bit VXLAN Network Identifier (VNI),
+carried in a dedicated header field outside the outer IP addressing,
+identifies the specific Layer-2 service instance. This separation
+has made VXLAN the de facto reference for scalable Ethernet
+overlays.
+
+SRv6 already defines Layer-2 endpoint behaviors in {{RFC8986}},
+including `End.DT2U` for delivery of decapsulated Ethernet frames
+into a local Ethernet domain through Layer-2 table lookup. These
+behaviors provide the architectural basis for SRv6 Layer-2 overlays.
+However, in current SRv6 practice the identification of the specific
+Layer-2 service instance is typically absorbed into the outer IPv6
+Destination Address, for example through a service uSID at the
+egress node, so that endpoint identification, behavior selection,
+and service-instance identification share the same address.
+
+The pressure on the Destination Address has further increased with
+the introduction of compressed SRv6 segment-list encoding mechanisms
+{{RFC9800}}, such as uSID, in which the SID space available after
+the locator portion of the address is intrinsically limited.
+Allocating a 24-bit VXLAN-like service identifier directly in the
+Destination Address would consume a significant fraction of the
+available SID space and would couple service identification with
+locator and behavior encoding in an undesirable way.
+
+For these reasons, this document defines an SRv6-native Layer-2
+service identification mechanism that preserves the Destination
+Address for SRv6 endpoint identification, behavior selection, and
+path steering, while providing a compact 24-bit service identifier
+comparable in size and role to the VXLAN VNI. This is achieved by
+encoding the service identifier in the 24 least significant bits of
+the outer IPv6 Source Address. The conceptual relationship between
+the VXLAN model, current SRv6 practice, and the approach proposed
+in this document is illustrated in {{fig-overview}}.
+
+~~~
+   VXLAN model            Current SRv6           This document
+   -----------            ------------           -------------
+
+   outer IP DA            outer IPv6 DA          outer IPv6 DA
+   -> remote VTEP         -> egress node +       -> egress node +
+                             SRv6 behavior          SRv6 behavior
+                             + service uSID
+
+   VXLAN VNI (24b)        (service identifier    outer IPv6 SA
+   -> L2 service          absorbed into the      lower 24 bits
+      instance            Destination Address)   -> L2 service
+                                                    instance
+~~~
+{: #fig-overview title="Service identification: VXLAN, current SRv6, and this document."}
+
+Implementation aspects of an SRv6 Layer-2 overlay using this
+service-identification model, including integration with the local
+Layer-2 data plane, are discussed in {{HYDN-MAITI-2026}}.
 
 # Problem Statement and Design Goals
 
@@ -264,33 +336,47 @@ providing a separate field for compact Layer-2 service identification.
 # Relation to Existing SRv6 Behaviors
 
 The mechanism proposed in this document is intended to define a new
-SRv6 Layer-2 decapsulation behavior, denoted as `End.DX2.SA`, rather
-than to redefine the existing `End.DX2` behavior of {{RFC8986}}.
+SRv6 Layer-2 decapsulation behavior, denoted as `End.DT2U.SA`, rather
+than to redefine the existing Layer-2 endpoint behaviors of
+{{RFC8986}}.
 
-The `End.DX2` behavior identifies a Layer-2 cross-connect function at
-the egress node and forwards the decapsulated frame to the associated
-outgoing Layer-2 interface. In current SRv6 practice, the specific
-service instance is typically identified through the Destination Address
-semantics, for example by using a service uSID.
+Among the Layer-2 behaviors defined in {{RFC8986}}, `End.DT2U`
+provides the closest functional reference for VXLAN-like Ethernet
+overlays. `End.DT2U` performs decapsulation of an SRv6 packet
+carrying an inner Ethernet frame and delivers the frame into a
+local Ethernet domain through Layer-2 table lookup. In current
+SRv6 practice, the specific Layer-2 service instance associated
+with the decapsulating node is typically identified through the
+Destination Address semantics, for example by using a service uSID.
 
-The `End.DX2.SA` behavior follows the same overall model of Layer-2
-decapsulation and forwarding, but introduces an additional
-service-identification function. In particular, the egress node is
-identified through the Destination Address and the associated SRv6
-behavior, while the specific Layer-2 service instance is identified by
-the 24-bit value carried in the least significant bits of the outer
-IPv6 Source Address.
+The `End.DT2U.SA` behavior follows the same overall model of
+Layer-2 decapsulation and delivery into a local Ethernet domain,
+but introduces an additional service-identification function. The
+egress node and the SRv6 behavior are identified through the outer
+IPv6 Destination Address, while the specific Layer-2 service
+instance is identified by the 24-bit value carried in the least
+significant bits of the outer IPv6 Source Address, as defined in
+this document.
 
-For this reason, `End.DX2.SA` can be viewed as an enhanced variant of
-`End.DX2`, in which the Layer-2 service identifier is carried
+For this reason, `End.DT2U.SA` can be viewed as an enhanced variant
+of `End.DT2U`, in which the Layer-2 service identifier is carried
 separately from the Destination Address. This provides a clearer
 separation between endpoint identification and service-instance
-identification, and avoids consuming Destination Address SID space for
-VXLAN-like service identification.
+identification, and avoids consuming Destination Address SID space
+for VXLAN-like service identification.
 
-This document therefore assumes that the proposed mechanism is specified
-as a distinct SRv6 behavior, namely `End.DX2.SA`, rather than as a
-backward-compatible reinterpretation of `End.DX2`.
+The Layer-2 cross-connect behavior `End.DX2` of {{RFC8986}}, which
+forwards the decapsulated frame toward a specific outgoing Layer-2
+interface, is functionally distinct and is not the primary reference
+for the mechanism defined in this document. Variants of the Layer-2
+delivery behaviors for multicast or other forwarding semantics may
+be defined in future specifications using a similar source-address
+based service-identification model.
+
+This document therefore assumes that the proposed mechanism is
+specified as a distinct SRv6 behavior, namely `End.DT2U.SA`, rather
+than as a backward-compatible reinterpretation of an existing
+Layer-2 behavior.
 
 # Encapsulation Procedure
 
@@ -300,7 +386,7 @@ Ethernet frame that must be transported over an SRv6 Layer-2 tunnel.
 The ingress node MUST construct an outer IPv6 header whose Destination
 Address identifies the remote decapsulation node and the SRv6 behavior
 to be executed at that node. In the approach defined by this document,
-the behavior is `End.DX2.SA`.
+the behavior is `End.DT2U.SA`.
 
 The ingress node MUST also assign a 24-bit service identifier to the
 Layer-2 service instance associated with the frame. This identifier is
@@ -332,7 +418,7 @@ required by normal tunnel processing.
 Operationally, the ingress node performs the following steps:
 
 1. determine the remote decapsulation endpoint and the corresponding
-   `End.DX2.SA` service SID;
+   `End.DT2U.SA` service SID;
 2. determine the 24-bit service identifier associated with the Layer-2
    service instance;
 3. construct the outer IPv6 Source Address so that:
@@ -350,7 +436,7 @@ be statically provisioned or distributed by a control-plane mechanism.
 When an encapsulated packet reaches the remote endpoint, SRv6
 processing identifies the local behavior to be executed from the outer
 IPv6 Destination Address and, if present, from the active SID in the
-SRH. If the selected behavior is `End.DX2.SA`, the node performs the
+SRH. If the selected behavior is `End.DT2U.SA`, the node performs the
 Layer-2 decapsulation procedure defined in this section.
 
 The egress node MUST extract the 24 least significant bits of the outer
@@ -373,7 +459,7 @@ service identifier.
 
 Operationally, the egress node performs the following steps:
 
-1. receive the SRv6 packet and identify the `End.DX2.SA` behavior;
+1. receive the SRv6 packet and identify the `End.DT2U.SA` behavior;
 2. extract the 24-bit service identifier from the least significant
    bits of the outer IPv6 Source Address;
 3. map the extracted service identifier to a local Layer-2 service
@@ -422,10 +508,10 @@ scope of this document.
 
 # IANA Considerations
 
-This document proposes a new SRv6 behavior, denoted as `End.DX2.SA`.
+This document proposes a new SRv6 behavior, denoted as `End.DT2U.SA`.
 
 If this document is progressed, an IANA allocation will be needed for
-the `End.DX2.SA` behavior in the relevant SRv6 behavior registry.
+the `End.DT2U.SA` behavior in the relevant SRv6 behavior registry.
 
 This document does not request any additional IANA action in this
 version.
