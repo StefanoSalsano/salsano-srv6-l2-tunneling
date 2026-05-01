@@ -42,10 +42,16 @@ normative:
   RFC8986:
 
 informative:
+  RFC3704:
   RFC7348:
+  RFC8704:
+  RFC8799:
   RFC9252:
   RFC9800:
   RFC9819:
+  I-D.cheng-spring-srv6-encoding-network-sliceid:
+  I-D.ietf-6man-vpn-dest-opt:
+  I-D.li-6man-apn-ipv6-encap:
   HYDN-MAITI-2026:
     title: "SRv6 Layer-2 Overlays with VXLAN-like Semantics: Linux End.DT2U, the sr6 Device, and Scalable Service Identification"
     author:
@@ -61,14 +67,18 @@ SRv6 defines Layer-2-oriented endpoint behaviors and supports
 SRv6-based Layer-2 overlay services. However, practical Layer-2
 tunneling over SRv6 still lacks a simple and efficient service
 identification model comparable to the VXLAN VNI. This limitation is
-particularly relevant in uSID-based deployments, where destination-
-address space is a scarce resource and cannot be consumed freely for
+particularly relevant in uSID-based deployments, where Destination
+Address space is a scarce resource and cannot be consumed freely for
 per-service identification.
 
 This document proposes an SRv6 Layer-2 tunneling approach in which a
-24-bit service identifier is encoded in the outer IPv6 source address.
-This preserves destination-address space for SRv6 steering while
-enabling VXLAN-like identification of Layer-2 overlay services.
+24-bit Layer-2 service identifier is encoded in the 24 least
+significant bits of the outer IPv6 Source Address, while the
+remaining 104 bits preserve normal IPv6 Source Address semantics.
+This preserves Destination Address space for SRv6 steering while
+enabling VXLAN-like identification of Layer-2 overlay services. The
+mechanism is intended for deployment within a single administrative
+limited domain.
 
 --- middle
 
@@ -91,6 +101,17 @@ Destination Address continues to identify the remote endpoint and
 the SRv6 behavior to be executed, following normal SRv6 processing,
 while the outer IPv6 Source Address carries a compact, VXLAN-like
 service identifier without consuming Destination Address space.
+The remaining 104 bits of the outer IPv6 Source Address preserve
+normal IPv6 Source Address semantics, so that the resulting address
+remains a valid unicast IPv6 address as required by {{RFC8200}}.
+
+The mechanism defined in this document is intended for deployment
+within a limited domain, in the sense of {{RFC8799}}, that is,
+within a set of nodes and links under a single administrative
+authority where consistent treatment of the proposed Source Address
+encoding can be ensured by the operator. The applicability and the
+operational considerations associated with this scoping are
+discussed in {{applicability}}.
 
 # Scenario and Motivation
 
@@ -475,36 +496,147 @@ The detailed error handling, OAM behavior, and optional ICMP reporting
 for this case are left for future versions of this document.
 
 
+# Related Work {#related-work}
+
+The encoding of service-identification or context information in
+the IPv6 packet header has been explored in several IETF
+specifications and ongoing work, using different mechanisms.
+
+A directly comparable design pattern is proposed in
+{{I-D.cheng-spring-srv6-encoding-network-sliceid}}, which encodes a
+network slice identifier in the least significant bits of the
+outer IPv6 Source Address of an SRv6 packet. That work shares the
+same architectural choice adopted in this document, namely
+encoding a compact identifier in the lower portion of the Source
+Address while preserving normal IPv6 semantics in the upper bits.
+The two specifications address different problems, network slicing
+on one side and Layer-2 service identification on the other, but
+they apply a consistent design pattern to the SRv6 Source Address.
+
+Other related work uses different fields of the IPv6 packet header
+to convey service or context information. The IPv6 VPN Service
+Destination Option {{I-D.ietf-6man-vpn-dest-opt}} encodes VPN
+identification in an IPv6 Destination Option, that is, in an
+extension header rather than in an address field.
+Application-aware IPv6 Networking
+{{I-D.li-6man-apn-ipv6-encap}} similarly relies on extension-header
+encapsulation to carry application-aware attributes. SRv6 Services
+{{RFC9252}} and the SRv6 network programming model {{RFC8986}}
+encode service-instance information in the Destination Address
+through the SID structure, possibly in compressed form
+{{RFC9800}}.
+
+These approaches differ from the mechanism defined in this document
+in two main ways. First, they either consume Destination Address
+space or require the addition of an IPv6 extension header to carry
+the service identifier, whereas the mechanism defined here reuses
+existing space in the outer IPv6 Source Address. Second, they
+target different service models, in particular IPv6 VPNs and
+application-aware networking, whereas this document focuses on
+Layer-2 service identification for SRv6 Layer-2 tunnels.
+
+# Applicability and Deployment Considerations {#applicability}
+
+The mechanism defined in this document is applicable within a
+limited domain, in the sense of {{RFC8799}}, under a single
+administrative authority. Within such a domain, the operator can
+ensure consistent allocation of IPv6 Source Address prefixes, the
+encoding of the 24-bit service identifier in the lower bits of the
+Source Address, and the corresponding configuration of the
+decapsulation behavior at the egress nodes.
+
+Packets carrying the proposed Source Address encoding SHOULD NOT
+leave the limited domain in which the encoding is interpreted.
+Nodes at the boundary of the limited domain SHOULD prevent egress
+of packets that rely on this encoding for service identification,
+either by terminating the SRv6 Layer-2 tunnels at the boundary or
+by applying appropriate filtering policies.
+
+## Source Address Allocation
+
+To support the proposed encoding, the operator deploying this
+mechanism allocates an IPv6 Source Address prefix to each ingress
+node that performs Layer-2 encapsulation according to this
+document. A natural allocation is a /104 prefix per ingress node,
+or a shorter prefix shared among multiple ingress nodes, so that
+the lower 24 bits remain available to encode the Layer-2 service
+identifier.
+
+The chosen prefix MUST be routable within the limited domain so
+that the resulting outer IPv6 Source Address is a valid unicast
+address of the ingress node, in the sense of Section 4.1 of
+{{RFC8200}}, and so that return traffic and ICMPv6 messages
+addressed to the Source Address can be delivered to the ingress
+node.
+
+## Source Address Validation and Ingress Filtering
+
+The mechanism defined in this document interacts with Source
+Address Validation (SAV) techniques such as ingress filtering
+{{RFC3704}} and enhanced feasible-path uRPF {{RFC8704}}. Within
+the limited domain, the operator MUST ensure that the routing
+configuration and the SAV policies are consistent with the use of
+the allocated Source Address prefixes by the ingress nodes. In
+particular, packets sourced by an ingress node from any address
+within its allocated prefix, including those carrying a non-zero
+service identifier in the lower 24 bits, MUST NOT be discarded by
+SAV mechanisms internal to the domain.
+
+At the boundary of the limited domain, normal SAV policies may be
+applied to traffic that leaves or enters the domain, since
+packets carrying the proposed Source Address encoding are not
+expected to cross the boundary.
+
+## Return Reachability and ICMPv6
+
+Because the upper 104 bits of the outer IPv6 Source Address form a
+valid and routable IPv6 prefix assigned to the ingress node,
+return traffic and ICMPv6 messages addressed to the Source Address
+are delivered to the ingress node according to normal IPv6
+forwarding within the limited domain. This includes ICMPv6 error
+messages generated within the underlay, such as Packet Too Big or
+Time Exceeded, that are addressed to the outer IPv6 Source Address
+of the original packet. The handling of such messages by the
+ingress node is implementation-specific and outside the scope of
+this document.
+
+## Operational Tooling
+
+Within the limited domain, source-address-based filtering, policy
+enforcement, accounting, and monitoring tools may be exposed to
+outer IPv6 Source Addresses that share a common upper prefix and
+differ in the lower 24 bits according to the encoded Layer-2
+service identifier. Operational tools deployed within the domain
+SHOULD be configured to interpret such addresses consistently with
+the encoding defined in this document, so that packets belonging
+to different Layer-2 service instances are not aggregated or
+distinguished in unexpected ways.
+
 # Security Considerations
 
 The mechanism defined in this document uses the 24 least significant
-bits of the outer IPv6 Source Address to identify the Layer-2 service
-instance associated with a tunneled frame.
+bits of the outer IPv6 Source Address to identify the Layer-2
+service instance associated with a tunneled frame.
 
-As a consequence, unauthorized modification of the outer IPv6 Source
-Address may cause a packet to be associated with the wrong Layer-2
-service instance at the decapsulating node. This can result in traffic
-misdelivery across Layer-2 services or bridge domains.
+As a consequence, unauthorized modification of the outer IPv6
+Source Address may cause a packet to be associated with the wrong
+Layer-2 service instance at the decapsulating node. This can
+result in traffic misdelivery across Layer-2 services or bridge
+domains.
 
-For this reason, the mechanism defined in this document is primarily
-intended for deployment in controlled or limited domains, where the
-operator can manage protocol support, address assignment, and trust
-relationships among participating nodes.
+For this reason, the mechanism defined in this document is intended
+for deployment within a limited domain under a single
+administrative authority, as discussed in {{applicability}}.
+Within the limited domain, the operator is expected to protect the
+integrity of the outer IPv6 Source Address against unauthorized
+modification, in order to avoid traffic misdelivery between
+Layer-2 service instances.
 
-The upper 104 bits of the outer IPv6 Source Address are required to
-preserve normal IPv6 Source Address semantics. This helps maintain basic
-operational properties, including return reachability and support for
-operations such as ICMPv6 echo reply processing. However, the use of the
-lower 24 bits as a service identifier may still interact with local
-source-address-based filtering, policy enforcement, or operational
-tooling. Deployments using this mechanism SHOULD ensure that such
-functions are aware of the proposed Source Address encoding.
-
-The security implications also depend on the control-plane mechanism
-used to assign the 24-bit service identifier and to configure the
-mapping between service identifiers and local Layer-2 service
-instances. Protection of such control-plane mechanisms is outside the
-scope of this document.
+The security implications also depend on the control-plane
+mechanism used to assign the 24-bit service identifier and to
+configure the mapping between service identifiers and local
+Layer-2 service instances. Protection of such control-plane
+mechanisms is outside the scope of this document.
 
 # IANA Considerations
 
