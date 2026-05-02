@@ -473,8 +473,21 @@ The Layer-2 cross-connect behaviors `End.DX2` and `End.DX2V` of
 {{RFC8986}}, which forward the decapsulated frame toward a
 specific outgoing Layer-2 interface or VLAN, are functionally
 distinct from `End.DT2U`/`End.DT2M` because they do not perform
-bridge-domain Layer-2 forwarding. They are therefore not the
-primary reference for the mechanism defined in this document.
+bridge-domain Layer-2 forwarding. The cardinality of the service
+instances supported by these cross-connect behaviors at a given
+egress node is bounded by the number of locally configured
+Layer-2 interfaces and, for `End.DX2V`, by the number of VLANs
+per interface, which is typically well within the order of 2^16
+service-uSID values made available by a 16-bit Function Length in
+the SRv6 SID structure of {{RFC9252}}. An operator can readily
+reserve a contiguous range within that space for the
+identification of all Layer-2 interfaces (or VLAN-tagged
+sub-interfaces) of a node. As a consequence, a standard Service
+SID encoded in the Destination Address per {{RFC9252}} remains
+operationally adequate for `End.DX2` and `End.DX2V`, and the
+source-address-based encoding defined in this document is not
+required for these behaviors. They are therefore not the primary
+reference for the mechanism defined in this document.
 
 This document therefore assumes that the proposed mechanism is
 specified as two distinct SRv6 behaviors, namely `End.DT2U.SA` and
