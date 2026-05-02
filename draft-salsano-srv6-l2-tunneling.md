@@ -125,29 +125,28 @@ mechanism defined in this document.
 Modern Layer-2 overlay deployments, in particular in datacenter
 networks supporting hyperscale and AI-oriented workloads, rely on
 encapsulation technologies that combine a clear separation between
-tunnel-endpoint identification and Layer-2 service identification
-with a compact and explicit identifier for each Layer-2 service
-instance. VXLAN {{RFC7348}} is the most widespread example of this
+tunnel-endpoint identification and bridge-domain identification
+with a compact and explicit identifier for each bridge domain.
+VXLAN {{RFC7348}} is the most widespread example of this
 operational model: the outer IP addressing identifies the remote
 tunnel endpoint, while a 24-bit VXLAN Network Identifier (VNI),
 carried in a dedicated header field outside the outer IP addressing,
-identifies the specific Layer-2 service instance. This separation
+identifies the specific bridge domain. This separation
 has made VXLAN the de facto reference for scalable Ethernet
 overlays.
 
 SRv6 already defines Layer-2 endpoint behaviors in {{RFC8986}},
-including `End.DT2U` for delivery of decapsulated Ethernet frames
-into a local Ethernet domain through Layer-2 table lookup. These
-behaviors provide the architectural basis for SRv6 Layer-2
-overlays. The signaling of these behaviors as Service SIDs over
+including `End.DT2U` for unicast Layer-2 table lookup and
+`End.DT2M` for broadcast/unknown-unicast/multicast (BUM) flooding
+in a local Ethernet bridge domain. Together, these behaviors
+provide the architectural basis for SRv6 Layer-2 overlays. The signaling of these behaviors as Service SIDs over
 BGP, in particular for SRv6-based EVPN services, is specified in
 {{RFC9252}} and {{RFC9819}}. In current SRv6 practice, following
 this BGP overlay services model, the identification of the
-specific Layer-2 service instance is typically absorbed into the
-outer IPv6 Destination Address, for example through a service uSID
-at the egress node, so that endpoint identification, behavior
-selection, and service-instance identification share the same
-address.
+specific bridge domain is typically absorbed into the outer IPv6
+Destination Address, for example through a service uSID at the
+egress node, so that endpoint identification, behavior selection,
+and bridge-domain identification share the same address.
 
 The pressure on the Destination Address has further increased with
 the introduction of compressed SRv6 segment-list encoding mechanisms
@@ -177,10 +176,9 @@ in this document is illustrated in {{fig-overview}}.
                              SRv6 behavior          SRv6 behavior
                              + service uSID
 
-   VXLAN VNI (24b)        (service identifier    outer IPv6 SA
-   -> L2 service          absorbed into the      lower 24 bits
-      instance            Destination Address)   -> L2 service
-                                                    instance
+   VXLAN VNI (24b)        (bridge-domain id      outer IPv6 SA
+   -> bridge domain       absorbed into the      lower 24 bits
+                          Destination Address)   -> bridge domain
 ~~~
 {: #fig-overview title="Service identification: VXLAN, current SRv6, and this document."}
 
@@ -205,37 +203,28 @@ Layer-2 data plane, are discussed in {{HYDN-MAITI-2026}}.
 
 # Problem Statement and Design Goals
 
-SRv6 Layer-2 tunneling requires two distinct functions. First, a packet
-must be delivered to the remote node that performs the decapsulation
-behavior. Second, the decapsulating node must identify the specific
-Layer-2 service, bridge domain, or virtual network to which the inner
-frame belongs.
+SRv6 Layer-2 tunneling requires two distinct functions. First, a
+packet must be delivered to the remote node that performs the
+decapsulation behavior. Second, the decapsulating node must
+identify the specific bridge domain to which the inner frame
+belongs.
 
-In VXLAN, these two functions are clearly separated. The outer IP
-address identifies the remote tunnel endpoint, while the VXLAN Network
-Identifier (VNI) identifies the Layer-2 service. The VNI is carried in a
-dedicated 24-bit field and does not consume addressing space used for
-tunnel delivery.
+As discussed in {{fig-overview}}, VXLAN separates the two
+functions cleanly through the outer IP addressing and the 24-bit
+VNI. In SRv6, the outer IPv6 Destination Address and, more
+generally, the SID list are naturally used for endpoint
+identification and behavior selection, but bridge-domain
+identification is typically absorbed into the same Destination
+Address. Encoding a VXLAN-like 24-bit identifier in the
+Destination Address is impractical in deployments based on
+compressed SID representations such as uSID {{RFC9800}}, because
+it would consume a significant fraction of the available SID
+space.
 
-In SRv6, the outer IPv6 Destination Address and, more generally, the SID
-list are naturally used for endpoint identification and behavior
-selection. This is appropriate for steering packets to the decapsulating
-node and invoking the desired SRv6 Layer-2 behavior. However, this does
-not by itself provide an efficient way to identify the specific
-Layer-2 service carried by the tunneled frame.
-
-One possible solution is to encode the service identifier in the SRv6
-Destination Address. This approach is unattractive because it consumes
-bits that are valuable for locator encoding, endpoint identification,
-behavior selection, and path steering. The problem is particularly acute
-in deployments based on compressed SID representations such as uSID,
-where the available SID space after the locator is limited. In such
-environments, dedicating 24 bits to a VXLAN-like service identifier
-significantly reduces the usable space for SRv6 forwarding semantics.
-
-As a result, SRv6 Layer-2 tunneling lacks a compact and implementation-
-friendly service identification mechanism with feature parity to VXLAN.
-A practical solution should therefore satisfy the following design goals:
+As a result, SRv6 Layer-2 tunneling lacks a compact and
+implementation-friendly bridge-domain identification mechanism
+with feature parity to VXLAN. A practical solution should
+therefore satisfy the following design goals:
 
 * preserve the Destination Address primarily for SRv6 endpoint
   identification and behavior selection;
@@ -261,24 +250,17 @@ Layer-2 service associated with a tunneled frame.
 
 ## Tunnel Identification in VXLAN
 
-In VXLAN, the outer IP header identifies the remote tunnel endpoint,
-while the VXLAN header carries a 24-bit VXLAN Network Identifier (VNI).
-The VNI identifies the specific Layer-2 service, such as a bridge
-domain, virtual network, or Layer-2 overlay instance.
-
-This separation is simple and effective. The outer IP addressing is used
-to reach the decapsulating node, while the VNI identifies the service
-context in which the inner Ethernet frame is to be processed. As a
-result, VXLAN provides a compact and explicit service identifier that is
-independent of the outer IP addressing.
+In VXLAN, summarized in {{fig-overview}}, the outer IP header
+identifies the remote tunnel endpoint and the 24-bit VXLAN Network
+Identifier (VNI) identifies the specific bridge domain, in a
+dedicated header field independent of the outer IP addressing.
 
 ## Tunnel Identification in Current SRv6
 
-In current SRv6 practice, especially when using compressed SID
-representations such as uSID {{RFC9800}}, the decapsulating tunnel
-endpoint is typically identified by a local Service SID, signaled
-over BGP for SRv6-based overlay services as defined in {{RFC9252}}
-and {{RFC9819}}.
+When SRv6-based BGP overlay services are deployed using compressed
+SID representations such as uSID {{RFC9800}}, the decapsulating
+tunnel endpoint is typically identified by a local Service SID,
+signaled over BGP as defined in {{RFC9252}} and {{RFC9819}}.
 
 A uSID list commonly ends with:
 
@@ -314,32 +296,40 @@ but they consume additional bits of the SID and are constrained by
 the locator allocation and by interoperability considerations such
 as MPLS-Label-field transposition.
 
-As a consequence, the same limited service-uSID space is used both to
-identify the behavior and to distinguish among all concrete service
-instances supported by the node. In particular, allocating a VXLAN-like
-24-bit Layer-2 service identifier directly in the SRv6 Destination
-Address is impractical in uSID-based deployments, because it would
-consume a substantial fraction of the available SID space.
+As a consequence, the same limited service-uSID space is used
+both to identify the behavior and to distinguish among all
+concrete service instances supported by the node. In particular,
+allocating a VXLAN-like 24-bit bridge-domain identifier directly
+in the SRv6 Destination Address is impractical in uSID-based
+deployments, because it would consume a substantial fraction of
+the available SID space.
 
-This is a key difference from VXLAN. In VXLAN, the service identifier is
-carried in a dedicated field outside the outer IP addressing. In current
-SRv6 practice, including the BGP overlay services model of {{RFC9252}},
-service-instance identification is typically absorbed into the
-Destination Address semantics, which makes scalable Layer-2 tunnel
-identification more difficult.
+This is a key difference from VXLAN. In VXLAN, the bridge-domain
+identifier is carried in a dedicated field outside the outer IP
+addressing. In SRv6, including the BGP overlay services model of
+{{RFC9252}}, bridge-domain identification is typically absorbed
+into the Destination Address semantics, which makes scalable
+Layer-2 tunnel identification more difficult.
 
 # Source-Address-Based Service Identification {#sa-svc-id}
 
 This document proposes to encode the Layer-2 service identifier in the
 24 least significant bits of the outer IPv6 Source Address.
 
+In this document, the Layer-2 service unit identified by the
+24-bit value carried in `SA[23:0]` is consistently referred to as
+a *bridge domain*. This term encompasses both unicast Layer-2
+forwarding and broadcast/unknown-unicast/multicast (BUM) flooding
+semantics at the egress, depending on the SRv6 behavior selected
+through the Destination Address, as discussed in {{relation}}.
+
 The key idea is to separate the two functions that, in current SRv6
 practice, are both absorbed into the Destination Address semantics:
 
 * identification of the remote decapsulation node and of the SRv6
   behavior to be executed; and
-* identification of the specific Layer-2 service instance associated
-  with the tunneled frame.
+* identification of the specific bridge domain associated with the
+  tunneled frame.
 
 In the approach proposed here, the outer IPv6 Destination Address
 continues to identify the remote endpoint and the SRv6 decapsulation
@@ -388,9 +378,9 @@ between tunnel-endpoint identification and service identification that
 is similar, in functional terms, to the separation between outer IP
 addressing and VNI in VXLAN.
 
-The 24-bit service identifier carried in the Source Address may be used
-to identify, for example, a bridge domain, a Layer-2 overlay instance,
-or another local tunnel context associated with Layer-2 forwarding.
+The 24-bit service identifier carried in the Source Address
+identifies the bridge domain at the egress node to which the
+inner Ethernet frame is to be delivered.
 
 This document does not mandate a specific control-plane signaling
 mechanism for the 24-bit service identifier. Such mechanisms are outside
@@ -400,7 +390,7 @@ The proposed use of the Source Address does not alter the role of the
 Destination Address in SRv6 forwarding. Instead, it complements it by
 providing a separate field for compact Layer-2 service identification.
 
-# Relation to Existing SRv6 Behaviors
+# Relation to Existing SRv6 Behaviors {#relation}
 
 The mechanism proposed in this document is intended to define two
 new SRv6 Layer-2 decapsulation behaviors, denoted as `End.DT2U.SA`
@@ -417,9 +407,8 @@ inner Ethernet frame to the same kind of bridge domain through
 broadcast, unknown-unicast, and multicast (BUM) flooding
 semantics, as commonly required to support traffic such as ARP,
 unknown-MAC frames, and Layer-2 multicast in distributed Layer-2
-overlays. In current SRv6 practice, in particular for SRv6-based
-EVPN overlay services specified in {{RFC9252}} and {{RFC9819}},
-the specific Layer-2 service instance (i.e., the bridge domain)
+overlays. Following the BGP overlay services framework specified
+in {{RFC9252}} and {{RFC9819}}, the specific bridge domain
 associated with the decapsulating node is typically identified
 through the Destination Address semantics, for example by using a
 service uSID encoded in the Function (and optionally Argument)
@@ -439,9 +428,9 @@ For this reason, `End.DT2U.SA` can be viewed as an enhanced variant
 of `End.DT2U`, and `End.DT2M.SA` as an enhanced variant of
 `End.DT2M`, in which the bridge-domain identifier is carried
 separately from the Destination Address. This provides a clearer
-separation between endpoint identification and service-instance
-identification, and avoids consuming Destination Address SID space
-for VXLAN-like service identification.
+separation between endpoint identification and bridge-domain
+identification, and avoids consuming Destination Address SID
+space for VXLAN-like service identification.
 
 The relationship between `End.DT2M.SA` and `End.DT2U.SA` mirrors
 exactly the relationship between `End.DT2M` and `End.DT2U` in
@@ -613,7 +602,7 @@ behaviors such as `End.DX2`, `End.DX2V`, `End.DT2U`, and
 encoded into the outer IPv6 Destination Address according to the
 SRv6 network programming model of {{RFC8986}}, possibly in
 compressed form {{RFC9800}}. In this model, both the endpoint
-and the specific Layer-2 service instance are identified through
+and the specific bridge domain are identified through
 the Destination Address. The IPv6 VPN Service Destination Option
 {{I-D.ietf-6man-vpn-dest-opt}} instead encodes VPN identification
 in an IPv6 Destination Option, that is, in an extension header
@@ -771,8 +760,8 @@ ICMPv6 error messages generated within the underlay, such as
 Packet Too Big or Time Exceeded, that are addressed to the outer
 IPv6 Source Address of an encapsulated packet are therefore
 delivered to the ingress node regardless of the value of the lower
-24 bits, and can be associated with the corresponding Layer-2
-service instance through the encoded service identifier.
+24 bits, and can be associated with the corresponding bridge
+domain through the encoded service identifier.
 
 The detailed handling of such messages by the ingress node,
 including any subsequent action on the encapsulation or on the
@@ -797,7 +786,7 @@ prefix as locally configured.
 
 The detailed handling of received Packet Too Big messages by the
 ingress node, including any association with the corresponding
-Layer-2 service instance and any subsequent action on the
+bridge domain and any subsequent action on the
 encapsulation or on the inner Ethernet frame size, is
 implementation-specific and outside the scope of this document.
 As a baseline, operators are expected to provision the underlay
@@ -833,20 +822,19 @@ differ in the lower 24 bits according to the encoded Layer-2
 service identifier. Operational tools deployed within the domain
 SHOULD be configured to interpret such addresses consistently with
 the encoding defined in this document, so that packets belonging
-to different Layer-2 service instances are not aggregated or
+to different bridge domains are not aggregated or
 distinguished in unexpected ways.
 
 # Security Considerations
 
-The mechanism defined in this document uses the 24 least significant
-bits of the outer IPv6 Source Address to identify the Layer-2
-service instance associated with a tunneled frame.
+The mechanism defined in this document uses the 24 least
+significant bits of the outer IPv6 Source Address to identify the
+bridge domain associated with a tunneled frame.
 
 As a consequence, unauthorized modification of the outer IPv6
-Source Address may cause a packet to be associated with the wrong
-Layer-2 service instance at the decapsulating node. This can
-result in traffic misdelivery across Layer-2 services or bridge
-domains.
+Source Address may cause a packet to be associated with the
+wrong bridge domain at the decapsulating node, resulting in
+traffic misdelivery between bridge domains.
 
 For this reason, the mechanism defined in this document is intended
 for deployment within a limited domain under a single
@@ -854,12 +842,12 @@ administrative authority, as discussed in {{applicability}}.
 Within the limited domain, the operator is expected to protect the
 integrity of the outer IPv6 Source Address against unauthorized
 modification, in order to avoid traffic misdelivery between
-Layer-2 service instances.
+bridge domains.
 
 The security implications also depend on the control-plane
 mechanism used to assign the 24-bit service identifier and to
 configure the mapping between service identifiers and local
-Layer-2 service instances. Protection of such control-plane
+bridge domains. Protection of such control-plane
 mechanisms is outside the scope of this document.
 
 # IANA Considerations
@@ -875,6 +863,20 @@ for both the `End.DT2U.SA` and the `End.DT2M.SA` behaviors in the
 
 This document does not request any additional IANA action in this
 version.
+
+# Implementation Status
+
+This section is to be removed before publication.
+
+A Linux prototype implementation of an SRv6 Layer-2 overlay
+following the architectural model described in this document is
+available and is described in {{HYDN-MAITI-2026}}. The prototype
+includes a native bridge-integrated SRv6 Layer-2 tunnel netdevice
+(sr6) and Linux support for the `End.DT2U` behavior of
+{{RFC8986}}. The integration of the source-address-based
+service-identification mechanism specified in this document, and
+the corresponding support for the `End.DT2U.SA` and
+`End.DT2M.SA` behaviors, is work in progress.
 
 --- back
 
