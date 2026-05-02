@@ -1243,21 +1243,24 @@ limited domain.<a href="#section-abstract-2" class="pilcrow">¶</a></p>
             <p id="section-toc.1-1.13.1"><a href="#section-13" class="auto internal xref">13</a>. <a href="#name-iana-considerations" class="internal xref">IANA Considerations</a></p>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.14">
-            <p id="section-toc.1-1.14.1"><a href="#section-14" class="auto internal xref">14</a>. <a href="#name-references" class="internal xref">References</a></p>
-<ul class="compact toc ulBare ulEmpty">
-<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.14.2.1">
-                <p id="section-toc.1-1.14.2.1.1"><a href="#section-14.1" class="auto internal xref">14.1</a>.  <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+            <p id="section-toc.1-1.14.1"><a href="#section-14" class="auto internal xref">14</a>. <a href="#name-implementation-status" class="internal xref">Implementation Status</a></p>
 </li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.14.2.2">
-                <p id="section-toc.1-1.14.2.2.1"><a href="#section-14.2" class="auto internal xref">14.2</a>.  <a href="#name-informative-references" class="internal xref">Informative References</a></p>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.15">
+            <p id="section-toc.1-1.15.1"><a href="#section-15" class="auto internal xref">15</a>. <a href="#name-references" class="internal xref">References</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.15.2.1">
+                <p id="section-toc.1-1.15.2.1.1"><a href="#section-15.1" class="auto internal xref">15.1</a>.  <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.15.2.2">
+                <p id="section-toc.1-1.15.2.2.1"><a href="#section-15.2" class="auto internal xref">15.2</a>.  <a href="#name-informative-references" class="internal xref">Informative References</a></p>
 </li>
             </ul>
 </li>
-          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.15">
-            <p id="section-toc.1-1.15.1"><a href="#appendix-A" class="auto internal xref"></a><a href="#name-acknowledgments" class="internal xref">Acknowledgments</a></p>
-</li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.16">
-            <p id="section-toc.1-1.16.1"><a href="#appendix-B" class="auto internal xref"></a><a href="#name-authors-addresses" class="internal xref">Authors' Addresses</a></p>
+            <p id="section-toc.1-1.16.1"><a href="#appendix-A" class="auto internal xref"></a><a href="#name-acknowledgments" class="internal xref">Acknowledgments</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.17">
+            <p id="section-toc.1-1.17.1"><a href="#appendix-B" class="auto internal xref"></a><a href="#name-authors-addresses" class="internal xref">Authors' Addresses</a></p>
 </li>
         </ul>
 </nav>
@@ -1310,28 +1313,27 @@ mechanism defined in this document.<a href="#section-2-1" class="pilcrow">¶</a>
 <p id="section-2-2">Modern Layer-2 overlay deployments, in particular in datacenter
 networks supporting hyperscale and AI-oriented workloads, rely on
 encapsulation technologies that combine a clear separation between
-tunnel-endpoint identification and Layer-2 service identification
-with a compact and explicit identifier for each Layer-2 service
-instance. VXLAN <span>[<a href="#RFC7348" class="cite xref">RFC7348</a>]</span> is the most widespread example of this
+tunnel-endpoint identification and bridge-domain identification
+with a compact and explicit identifier for each bridge domain.
+VXLAN <span>[<a href="#RFC7348" class="cite xref">RFC7348</a>]</span> is the most widespread example of this
 operational model: the outer IP addressing identifies the remote
 tunnel endpoint, while a 24-bit VXLAN Network Identifier (VNI),
 carried in a dedicated header field outside the outer IP addressing,
-identifies the specific Layer-2 service instance. This separation
+identifies the specific bridge domain. This separation
 has made VXLAN the de facto reference for scalable Ethernet
 overlays.<a href="#section-2-2" class="pilcrow">¶</a></p>
 <p id="section-2-3">SRv6 already defines Layer-2 endpoint behaviors in <span>[<a href="#RFC8986" class="cite xref">RFC8986</a>]</span>,
-including <code>End.DT2U</code> for delivery of decapsulated Ethernet frames
-into a local Ethernet domain through Layer-2 table lookup. These
-behaviors provide the architectural basis for SRv6 Layer-2
-overlays. The signaling of these behaviors as Service SIDs over
+including <code>End.DT2U</code> for unicast Layer-2 table lookup and
+<code>End.DT2M</code> for broadcast/unknown-unicast/multicast (BUM) flooding
+in a local Ethernet bridge domain. Together, these behaviors
+provide the architectural basis for SRv6 Layer-2 overlays. The signaling of these behaviors as Service SIDs over
 BGP, in particular for SRv6-based EVPN services, is specified in
 <span>[<a href="#RFC9252" class="cite xref">RFC9252</a>]</span> and <span>[<a href="#RFC9819" class="cite xref">RFC9819</a>]</span>. In current SRv6 practice, following
 this BGP overlay services model, the identification of the
-specific Layer-2 service instance is typically absorbed into the
-outer IPv6 Destination Address, for example through a service uSID
-at the egress node, so that endpoint identification, behavior
-selection, and service-instance identification share the same
-address.<a href="#section-2-3" class="pilcrow">¶</a></p>
+specific bridge domain is typically absorbed into the outer IPv6
+Destination Address, for example through a service uSID at the
+egress node, so that endpoint identification, behavior selection,
+and bridge-domain identification share the same address.<a href="#section-2-3" class="pilcrow">¶</a></p>
 <p id="section-2-4">The pressure on the Destination Address has further increased with
 the introduction of compressed SRv6 segment-list encoding mechanisms
 <span>[<a href="#RFC9800" class="cite xref">RFC9800</a>]</span>, such as uSID, in which the SID space available after
@@ -1361,10 +1363,9 @@ in this document is illustrated in <a href="#fig-overview" class="auto internal 
                              SRv6 behavior          SRv6 behavior
                              + service uSID
 
-   VXLAN VNI (24b)        (service identifier    outer IPv6 SA
-   -&gt; L2 service          absorbed into the      lower 24 bits
-      instance            Destination Address)   -&gt; L2 service
-                                                    instance
+   VXLAN VNI (24b)        (bridge-domain id      outer IPv6 SA
+   -&gt; bridge domain       absorbed into the      lower 24 bits
+                          Destination Address)   -&gt; bridge domain
 </pre>
 </div>
 <figcaption><a href="#figure-1" class="selfRef">Figure 1</a>:
@@ -1395,60 +1396,53 @@ Layer-2 data plane, are discussed in <span>[<a href="#HYDN-MAITI-2026" class="ci
       <h2 id="name-problem-statement-and-desig">
 <a href="#section-3" class="section-number selfRef">3. </a><a href="#name-problem-statement-and-desig" class="section-name selfRef">Problem Statement and Design Goals</a>
       </h2>
-<p id="section-3-1">SRv6 Layer-2 tunneling requires two distinct functions. First, a packet
-must be delivered to the remote node that performs the decapsulation
-behavior. Second, the decapsulating node must identify the specific
-Layer-2 service, bridge domain, or virtual network to which the inner
-frame belongs.<a href="#section-3-1" class="pilcrow">¶</a></p>
-<p id="section-3-2">In VXLAN, these two functions are clearly separated. The outer IP
-address identifies the remote tunnel endpoint, while the VXLAN Network
-Identifier (VNI) identifies the Layer-2 service. The VNI is carried in a
-dedicated 24-bit field and does not consume addressing space used for
-tunnel delivery.<a href="#section-3-2" class="pilcrow">¶</a></p>
-<p id="section-3-3">In SRv6, the outer IPv6 Destination Address and, more generally, the SID
-list are naturally used for endpoint identification and behavior
-selection. This is appropriate for steering packets to the decapsulating
-node and invoking the desired SRv6 Layer-2 behavior. However, this does
-not by itself provide an efficient way to identify the specific
-Layer-2 service carried by the tunneled frame.<a href="#section-3-3" class="pilcrow">¶</a></p>
-<p id="section-3-4">One possible solution is to encode the service identifier in the SRv6
-Destination Address. This approach is unattractive because it consumes
-bits that are valuable for locator encoding, endpoint identification,
-behavior selection, and path steering. The problem is particularly acute
-in deployments based on compressed SID representations such as uSID,
-where the available SID space after the locator is limited. In such
-environments, dedicating 24 bits to a VXLAN-like service identifier
-significantly reduces the usable space for SRv6 forwarding semantics.<a href="#section-3-4" class="pilcrow">¶</a></p>
-<p id="section-3-5">As a result, SRv6 Layer-2 tunneling lacks a compact and implementation-
-friendly service identification mechanism with feature parity to VXLAN.
-A practical solution should therefore satisfy the following design goals:<a href="#section-3-5" class="pilcrow">¶</a></p>
+<p id="section-3-1">SRv6 Layer-2 tunneling requires two distinct functions. First, a
+packet must be delivered to the remote node that performs the
+decapsulation behavior. Second, the decapsulating node must
+identify the specific bridge domain to which the inner frame
+belongs.<a href="#section-3-1" class="pilcrow">¶</a></p>
+<p id="section-3-2">As discussed in <a href="#fig-overview" class="auto internal xref">Figure 1</a>, VXLAN separates the two
+functions cleanly through the outer IP addressing and the 24-bit
+VNI. In SRv6, the outer IPv6 Destination Address and, more
+generally, the SID list are naturally used for endpoint
+identification and behavior selection, but bridge-domain
+identification is typically absorbed into the same Destination
+Address. Encoding a VXLAN-like 24-bit identifier in the
+Destination Address is impractical in deployments based on
+compressed SID representations such as uSID <span>[<a href="#RFC9800" class="cite xref">RFC9800</a>]</span>, because
+it would consume a significant fraction of the available SID
+space.<a href="#section-3-2" class="pilcrow">¶</a></p>
+<p id="section-3-3">As a result, SRv6 Layer-2 tunneling lacks a compact and
+implementation-friendly bridge-domain identification mechanism
+with feature parity to VXLAN. A practical solution should
+therefore satisfy the following design goals:<a href="#section-3-3" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-3-6.1">
-          <p id="section-3-6.1.1">preserve the Destination Address primarily for SRv6 endpoint
-identification and behavior selection;<a href="#section-3-6.1.1" class="pilcrow">¶</a></p>
+<li class="normal" id="section-3-4.1">
+          <p id="section-3-4.1.1">preserve the Destination Address primarily for SRv6 endpoint
+identification and behavior selection;<a href="#section-3-4.1.1" class="pilcrow">¶</a></p>
 </li>
-        <li class="normal" id="section-3-6.2">
-          <p id="section-3-6.2.1">provide a compact service identifier comparable in size and role to
-the VXLAN VNI;<a href="#section-3-6.2.1" class="pilcrow">¶</a></p>
+        <li class="normal" id="section-3-4.2">
+          <p id="section-3-4.2.1">provide a compact service identifier comparable in size and role to
+the VXLAN VNI;<a href="#section-3-4.2.1" class="pilcrow">¶</a></p>
 </li>
-        <li class="normal" id="section-3-6.3">
-          <p id="section-3-6.3.1">enable one-to-one reuse of the 24-bit Layer-2 service identifiers
+        <li class="normal" id="section-3-4.3">
+          <p id="section-3-4.3.1">enable one-to-one reuse of the 24-bit Layer-2 service identifiers
 managed by existing VXLAN-based cloud orchestration systems,
-without changes to their underlying information models;<a href="#section-3-6.3.1" class="pilcrow">¶</a></p>
+without changes to their underlying information models;<a href="#section-3-4.3.1" class="pilcrow">¶</a></p>
 </li>
-        <li class="normal" id="section-3-6.4">
-          <p id="section-3-6.4.1">avoid excessive consumption of SID space, especially in uSID-based
-deployments;<a href="#section-3-6.4.1" class="pilcrow">¶</a></p>
+        <li class="normal" id="section-3-4.4">
+          <p id="section-3-4.4.1">avoid excessive consumption of SID space, especially in uSID-based
+deployments;<a href="#section-3-4.4.1" class="pilcrow">¶</a></p>
 </li>
-        <li class="normal" id="section-3-6.5">
-          <p id="section-3-6.5.1">fit naturally into an SRv6 encapsulation model;<a href="#section-3-6.5.1" class="pilcrow">¶</a></p>
+        <li class="normal" id="section-3-4.5">
+          <p id="section-3-4.5.1">fit naturally into an SRv6 encapsulation model;<a href="#section-3-4.5.1" class="pilcrow">¶</a></p>
 </li>
-        <li class="normal" id="section-3-6.6">
-          <p id="section-3-6.6.1">be simple to implement in practical dataplanes.<a href="#section-3-6.6.1" class="pilcrow">¶</a></p>
+        <li class="normal" id="section-3-4.6">
+          <p id="section-3-4.6.1">be simple to implement in practical dataplanes.<a href="#section-3-4.6.1" class="pilcrow">¶</a></p>
 </li>
       </ul>
-<p id="section-3-7">This document addresses that problem by proposing to encode a 24-bit
-service identifier in the outer IPv6 Source Address.<a href="#section-3-7" class="pilcrow">¶</a></p>
+<p id="section-3-5">This document addresses that problem by proposing to encode a 24-bit
+service identifier in the outer IPv6 Source Address.<a href="#section-3-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="tunnel-identification-in-vxlan-and-current-srv6">
@@ -1465,15 +1459,10 @@ Layer-2 service associated with a tunneled frame.<a href="#section-4-1" class="p
         <h3 id="name-tunnel-identification-in-vxl">
 <a href="#section-4.1" class="section-number selfRef">4.1. </a><a href="#name-tunnel-identification-in-vxl" class="section-name selfRef">Tunnel Identification in VXLAN</a>
         </h3>
-<p id="section-4.1-1">In VXLAN, the outer IP header identifies the remote tunnel endpoint,
-while the VXLAN header carries a 24-bit VXLAN Network Identifier (VNI).
-The VNI identifies the specific Layer-2 service, such as a bridge
-domain, virtual network, or Layer-2 overlay instance.<a href="#section-4.1-1" class="pilcrow">¶</a></p>
-<p id="section-4.1-2">This separation is simple and effective. The outer IP addressing is used
-to reach the decapsulating node, while the VNI identifies the service
-context in which the inner Ethernet frame is to be processed. As a
-result, VXLAN provides a compact and explicit service identifier that is
-independent of the outer IP addressing.<a href="#section-4.1-2" class="pilcrow">¶</a></p>
+<p id="section-4.1-1">In VXLAN, summarized in <a href="#fig-overview" class="auto internal xref">Figure 1</a>, the outer IP header
+identifies the remote tunnel endpoint and the 24-bit VXLAN Network
+Identifier (VNI) identifies the specific bridge domain, in a
+dedicated header field independent of the outer IP addressing.<a href="#section-4.1-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="tunnel-identification-in-current-srv6">
@@ -1481,11 +1470,10 @@ independent of the outer IP addressing.<a href="#section-4.1-2" class="pilcrow">
         <h3 id="name-tunnel-identification-in-cu">
 <a href="#section-4.2" class="section-number selfRef">4.2. </a><a href="#name-tunnel-identification-in-cu" class="section-name selfRef">Tunnel Identification in Current SRv6</a>
         </h3>
-<p id="section-4.2-1">In current SRv6 practice, especially when using compressed SID
-representations such as uSID <span>[<a href="#RFC9800" class="cite xref">RFC9800</a>]</span>, the decapsulating tunnel
-endpoint is typically identified by a local Service SID, signaled
-over BGP for SRv6-based overlay services as defined in <span>[<a href="#RFC9252" class="cite xref">RFC9252</a>]</span>
-and <span>[<a href="#RFC9819" class="cite xref">RFC9819</a>]</span>.<a href="#section-4.2-1" class="pilcrow">¶</a></p>
+<p id="section-4.2-1">When SRv6-based BGP overlay services are deployed using compressed
+SID representations such as uSID <span>[<a href="#RFC9800" class="cite xref">RFC9800</a>]</span>, the decapsulating
+tunnel endpoint is typically identified by a local Service SID,
+signaled over BGP as defined in <span>[<a href="#RFC9252" class="cite xref">RFC9252</a>]</span> and <span>[<a href="#RFC9819" class="cite xref">RFC9819</a>]</span>.<a href="#section-4.2-1" class="pilcrow">¶</a></p>
 <p id="section-4.2-2">A uSID list commonly ends with:<a href="#section-4.2-2" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-4.2-3.1">
@@ -1530,18 +1518,19 @@ local behaviors. Larger Function or Argument lengths are possible,
 but they consume additional bits of the SID and are constrained by
 the locator allocation and by interoperability considerations such
 as MPLS-Label-field transposition.<a href="#section-4.2-7" class="pilcrow">¶</a></p>
-<p id="section-4.2-8">As a consequence, the same limited service-uSID space is used both to
-identify the behavior and to distinguish among all concrete service
-instances supported by the node. In particular, allocating a VXLAN-like
-24-bit Layer-2 service identifier directly in the SRv6 Destination
-Address is impractical in uSID-based deployments, because it would
-consume a substantial fraction of the available SID space.<a href="#section-4.2-8" class="pilcrow">¶</a></p>
-<p id="section-4.2-9">This is a key difference from VXLAN. In VXLAN, the service identifier is
-carried in a dedicated field outside the outer IP addressing. In current
-SRv6 practice, including the BGP overlay services model of <span>[<a href="#RFC9252" class="cite xref">RFC9252</a>]</span>,
-service-instance identification is typically absorbed into the
-Destination Address semantics, which makes scalable Layer-2 tunnel
-identification more difficult.<a href="#section-4.2-9" class="pilcrow">¶</a></p>
+<p id="section-4.2-8">As a consequence, the same limited service-uSID space is used
+both to identify the behavior and to distinguish among all
+concrete service instances supported by the node. In particular,
+allocating a VXLAN-like 24-bit bridge-domain identifier directly
+in the SRv6 Destination Address is impractical in uSID-based
+deployments, because it would consume a substantial fraction of
+the available SID space.<a href="#section-4.2-8" class="pilcrow">¶</a></p>
+<p id="section-4.2-9">This is a key difference from VXLAN. In VXLAN, the bridge-domain
+identifier is carried in a dedicated field outside the outer IP
+addressing. In SRv6, including the BGP overlay services model of
+<span>[<a href="#RFC9252" class="cite xref">RFC9252</a>]</span>, bridge-domain identification is typically absorbed
+into the Destination Address semantics, which makes scalable
+Layer-2 tunnel identification more difficult.<a href="#section-4.2-9" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -1553,32 +1542,38 @@ identification more difficult.<a href="#section-4.2-9" class="pilcrow">¶</a></p
       </h2>
 <p id="section-5-1">This document proposes to encode the Layer-2 service identifier in the
 24 least significant bits of the outer IPv6 Source Address.<a href="#section-5-1" class="pilcrow">¶</a></p>
-<p id="section-5-2">The key idea is to separate the two functions that, in current SRv6
-practice, are both absorbed into the Destination Address semantics:<a href="#section-5-2" class="pilcrow">¶</a></p>
+<p id="section-5-2">In this document, the Layer-2 service unit identified by the
+24-bit value carried in <code>SA[23:0]</code> is consistently referred to as
+a <em>bridge domain</em>. This term encompasses both unicast Layer-2
+forwarding and broadcast/unknown-unicast/multicast (BUM) flooding
+semantics at the egress, depending on the SRv6 behavior selected
+through the Destination Address, as discussed in <a href="#relation" class="auto internal xref">Section 6</a>.<a href="#section-5-2" class="pilcrow">¶</a></p>
+<p id="section-5-3">The key idea is to separate the two functions that, in current SRv6
+practice, are both absorbed into the Destination Address semantics:<a href="#section-5-3" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-5-3.1">
-          <p id="section-5-3.1.1">identification of the remote decapsulation node and of the SRv6
-behavior to be executed; and<a href="#section-5-3.1.1" class="pilcrow">¶</a></p>
+<li class="normal" id="section-5-4.1">
+          <p id="section-5-4.1.1">identification of the remote decapsulation node and of the SRv6
+behavior to be executed; and<a href="#section-5-4.1.1" class="pilcrow">¶</a></p>
 </li>
-        <li class="normal" id="section-5-3.2">
-          <p id="section-5-3.2.1">identification of the specific Layer-2 service instance associated
-with the tunneled frame.<a href="#section-5-3.2.1" class="pilcrow">¶</a></p>
+        <li class="normal" id="section-5-4.2">
+          <p id="section-5-4.2.1">identification of the specific bridge domain associated with the
+tunneled frame.<a href="#section-5-4.2.1" class="pilcrow">¶</a></p>
 </li>
       </ul>
-<p id="section-5-4">In the approach proposed here, the outer IPv6 Destination Address
+<p id="section-5-5">In the approach proposed here, the outer IPv6 Destination Address
 continues to identify the remote endpoint and the SRv6 decapsulation
 behavior, following normal SRv6 processing. The outer IPv6 Source
 Address is instead used to carry a 24-bit service identifier,
-functionally similar to the VXLAN VNI.<a href="#section-5-4" class="pilcrow">¶</a></p>
-<p id="section-5-5">More precisely, let <code>SA</code> denote the 128-bit outer IPv6 Source Address.
-This document defines the service identifier as:<a href="#section-5-5" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-5-6">
+functionally similar to the VXLAN VNI.<a href="#section-5-5" class="pilcrow">¶</a></p>
+<p id="section-5-6">More precisely, let <code>SA</code> denote the 128-bit outer IPv6 Source Address.
+This document defines the service identifier as:<a href="#section-5-6" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-5-7">
 <pre>
 SERVICE_ID = SA[23:0]
-</pre><a href="#section-5-6" class="pilcrow">¶</a>
+</pre><a href="#section-5-7" class="pilcrow">¶</a>
 </div>
-<p id="section-5-7">that is, the 24 least significant bits of the outer IPv6 Source Address.<a href="#section-5-7" class="pilcrow">¶</a></p>
-<p id="section-5-8">The remaining upper 104 bits of the Source Address, i.e. <code>SA[127:24]</code>,
+<p id="section-5-8">that is, the 24 least significant bits of the outer IPv6 Source Address.<a href="#section-5-8" class="pilcrow">¶</a></p>
+<p id="section-5-9">The remaining upper 104 bits of the Source Address, i.e. <code>SA[127:24]</code>,
 MUST preserve the normal semantics of the IPv6 Source Address. In
 particular, they MUST be assigned so that the source address remains
 meaningful and reachable in the IPv6 domain where the SRv6 tunnel is
@@ -1587,37 +1582,37 @@ including the ability to receive return traffic and to support
 operations such as ICMPv6 echo reply processing. In other words, the use
 of the 24 least significant bits for service identification MUST NOT
 turn the outer IPv6 Source Address into a purely opaque field with no
-valid source-address semantics.<a href="#section-5-8" class="pilcrow">¶</a></p>
-<p id="section-5-9">The upper 104 bits <code>SA[127:24]</code> are a regular IPv6 prefix assigned
+valid source-address semantics.<a href="#section-5-9" class="pilcrow">¶</a></p>
+<p id="section-5-10">The upper 104 bits <code>SA[127:24]</code> are a regular IPv6 prefix assigned
 to the ingress node, in the sense of <span>[<a href="#RFC8200" class="cite xref">RFC8200</a>]</span>. They are not an
 SRv6 SID and MUST NOT be interpreted as a uSID container or
 otherwise subjected to compressed-SID processing such as that
-defined in <span>[<a href="#RFC9800" class="cite xref">RFC9800</a>]</span>.<a href="#section-5-9" class="pilcrow">¶</a></p>
-<p id="section-5-10">Using the 24 least significant bits of the Source Address provides a
+defined in <span>[<a href="#RFC9800" class="cite xref">RFC9800</a>]</span>.<a href="#section-5-10" class="pilcrow">¶</a></p>
+<p id="section-5-11">Using the 24 least significant bits of the Source Address provides a
 compact and explicit service identifier without consuming bits from the
 SRv6 Destination Address. This is particularly beneficial in uSID-based
 deployments, where Destination Address space is a scarce resource and
 should be preserved for locator encoding, endpoint identification,
-behavior selection, and path steering.<a href="#section-5-10" class="pilcrow">¶</a></p>
-<p id="section-5-11">At the decapsulating node, the SRv6 Destination Address identifies the
+behavior selection, and path steering.<a href="#section-5-11" class="pilcrow">¶</a></p>
+<p id="section-5-12">At the decapsulating node, the SRv6 Destination Address identifies the
 local decapsulation behavior, while the 24-bit value extracted from the
 outer IPv6 Source Address identifies the specific Layer-2 service
 instance. In this way, the proposed solution provides a separation
 between tunnel-endpoint identification and service identification that
 is similar, in functional terms, to the separation between outer IP
-addressing and VNI in VXLAN.<a href="#section-5-11" class="pilcrow">¶</a></p>
-<p id="section-5-12">The 24-bit service identifier carried in the Source Address may be used
-to identify, for example, a bridge domain, a Layer-2 overlay instance,
-or another local tunnel context associated with Layer-2 forwarding.<a href="#section-5-12" class="pilcrow">¶</a></p>
-<p id="section-5-13">This document does not mandate a specific control-plane signaling
+addressing and VNI in VXLAN.<a href="#section-5-12" class="pilcrow">¶</a></p>
+<p id="section-5-13">The 24-bit service identifier carried in the Source Address
+identifies the bridge domain at the egress node to which the
+inner Ethernet frame is to be delivered.<a href="#section-5-13" class="pilcrow">¶</a></p>
+<p id="section-5-14">This document does not mandate a specific control-plane signaling
 mechanism for the 24-bit service identifier. Such mechanisms are outside
-the scope of this document and may be defined by future specifications.<a href="#section-5-13" class="pilcrow">¶</a></p>
-<p id="section-5-14">The proposed use of the Source Address does not alter the role of the
+the scope of this document and may be defined by future specifications.<a href="#section-5-14" class="pilcrow">¶</a></p>
+<p id="section-5-15">The proposed use of the Source Address does not alter the role of the
 Destination Address in SRv6 forwarding. Instead, it complements it by
-providing a separate field for compact Layer-2 service identification.<a href="#section-5-14" class="pilcrow">¶</a></p>
+providing a separate field for compact Layer-2 service identification.<a href="#section-5-15" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="relation-to-existing-srv6-behaviors">
+<div id="relation">
 <section id="section-6">
       <h2 id="name-relation-to-existing-srv6-b">
 <a href="#section-6" class="section-number selfRef">6. </a><a href="#name-relation-to-existing-srv6-b" class="section-name selfRef">Relation to Existing SRv6 Behaviors</a>
@@ -1636,9 +1631,8 @@ inner Ethernet frame to the same kind of bridge domain through
 broadcast, unknown-unicast, and multicast (BUM) flooding
 semantics, as commonly required to support traffic such as ARP,
 unknown-MAC frames, and Layer-2 multicast in distributed Layer-2
-overlays. In current SRv6 practice, in particular for SRv6-based
-EVPN overlay services specified in <span>[<a href="#RFC9252" class="cite xref">RFC9252</a>]</span> and <span>[<a href="#RFC9819" class="cite xref">RFC9819</a>]</span>,
-the specific Layer-2 service instance (i.e., the bridge domain)
+overlays. Following the BGP overlay services framework specified
+in <span>[<a href="#RFC9252" class="cite xref">RFC9252</a>]</span> and <span>[<a href="#RFC9819" class="cite xref">RFC9819</a>]</span>, the specific bridge domain
 associated with the decapsulating node is typically identified
 through the Destination Address semantics, for example by using a
 service uSID encoded in the Function (and optionally Argument)
@@ -1656,9 +1650,9 @@ Source Address, as defined in this document.<a href="#section-6-3" class="pilcro
 of <code>End.DT2U</code>, and <code>End.DT2M.SA</code> as an enhanced variant of
 <code>End.DT2M</code>, in which the bridge-domain identifier is carried
 separately from the Destination Address. This provides a clearer
-separation between endpoint identification and service-instance
-identification, and avoids consuming Destination Address SID space
-for VXLAN-like service identification.<a href="#section-6-4" class="pilcrow">¶</a></p>
+separation between endpoint identification and bridge-domain
+identification, and avoids consuming Destination Address SID
+space for VXLAN-like service identification.<a href="#section-6-4" class="pilcrow">¶</a></p>
 <p id="section-6-5">The relationship between <code>End.DT2M.SA</code> and <code>End.DT2U.SA</code> mirrors
 exactly the relationship between <code>End.DT2M</code> and <code>End.DT2U</code> in
 <span>[<a href="#RFC8986" class="cite xref">RFC8986</a>]</span>. The two behaviors operate on the same set of bridge
@@ -1869,7 +1863,7 @@ behaviors such as <code>End.DX2</code>, <code>End.DX2V</code>, <code>End.DT2U</c
 encoded into the outer IPv6 Destination Address according to the
 SRv6 network programming model of <span>[<a href="#RFC8986" class="cite xref">RFC8986</a>]</span>, possibly in
 compressed form <span>[<a href="#RFC9800" class="cite xref">RFC9800</a>]</span>. In this model, both the endpoint
-and the specific Layer-2 service instance are identified through
+and the specific bridge domain are identified through
 the Destination Address. The IPv6 VPN Service Destination Option
 <span>[<a href="#I-D.ietf-6man-vpn-dest-opt" class="cite xref">I-D.ietf-6man-vpn-dest-opt</a>]</span> instead encodes VPN identification
 in an IPv6 Destination Option, that is, in an extension header
@@ -2047,8 +2041,8 @@ ICMPv6 error messages generated within the underlay, such as
 Packet Too Big or Time Exceeded, that are addressed to the outer
 IPv6 Source Address of an encapsulated packet are therefore
 delivered to the ingress node regardless of the value of the lower
-24 bits, and can be associated with the corresponding Layer-2
-service instance through the encoded service identifier.<a href="#section-11.3-2" class="pilcrow">¶</a></p>
+24 bits, and can be associated with the corresponding bridge
+domain through the encoded service identifier.<a href="#section-11.3-2" class="pilcrow">¶</a></p>
 <p id="section-11.3-3">The detailed handling of such messages by the ingress node,
 including any subsequent action on the encapsulation or on the
 inner-frame size, is implementation-specific and outside the scope
@@ -2074,7 +2068,7 @@ ingress node treats all addresses sharing the allocated 104-bit
 prefix as locally configured.<a href="#section-11.4-2" class="pilcrow">¶</a></p>
 <p id="section-11.4-3">The detailed handling of received Packet Too Big messages by the
 ingress node, including any association with the corresponding
-Layer-2 service instance and any subsequent action on the
+bridge domain and any subsequent action on the
 encapsulation or on the inner Ethernet frame size, is
 implementation-specific and outside the scope of this document.
 As a baseline, operators are expected to provision the underlay
@@ -2117,7 +2111,7 @@ differ in the lower 24 bits according to the encoded Layer-2
 service identifier. Operational tools deployed within the domain
 SHOULD be configured to interpret such addresses consistently with
 the encoding defined in this document, so that packets belonging
-to different Layer-2 service instances are not aggregated or
+to different bridge domains are not aggregated or
 distinguished in unexpected ways.<a href="#section-11.6-1" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -2128,25 +2122,24 @@ distinguished in unexpected ways.<a href="#section-11.6-1" class="pilcrow">¶</a
       <h2 id="name-security-considerations">
 <a href="#section-12" class="section-number selfRef">12. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
       </h2>
-<p id="section-12-1">The mechanism defined in this document uses the 24 least significant
-bits of the outer IPv6 Source Address to identify the Layer-2
-service instance associated with a tunneled frame.<a href="#section-12-1" class="pilcrow">¶</a></p>
+<p id="section-12-1">The mechanism defined in this document uses the 24 least
+significant bits of the outer IPv6 Source Address to identify the
+bridge domain associated with a tunneled frame.<a href="#section-12-1" class="pilcrow">¶</a></p>
 <p id="section-12-2">As a consequence, unauthorized modification of the outer IPv6
-Source Address may cause a packet to be associated with the wrong
-Layer-2 service instance at the decapsulating node. This can
-result in traffic misdelivery across Layer-2 services or bridge
-domains.<a href="#section-12-2" class="pilcrow">¶</a></p>
+Source Address may cause a packet to be associated with the
+wrong bridge domain at the decapsulating node, resulting in
+traffic misdelivery between bridge domains.<a href="#section-12-2" class="pilcrow">¶</a></p>
 <p id="section-12-3">For this reason, the mechanism defined in this document is intended
 for deployment within a limited domain under a single
 administrative authority, as discussed in <a href="#applicability" class="auto internal xref">Section 11</a>.
 Within the limited domain, the operator is expected to protect the
 integrity of the outer IPv6 Source Address against unauthorized
 modification, in order to avoid traffic misdelivery between
-Layer-2 service instances.<a href="#section-12-3" class="pilcrow">¶</a></p>
+bridge domains.<a href="#section-12-3" class="pilcrow">¶</a></p>
 <p id="section-12-4">The security implications also depend on the control-plane
 mechanism used to assign the 24-bit service identifier and to
 configure the mapping between service identifiers and local
-Layer-2 service instances. Protection of such control-plane
+bridge domains. Protection of such control-plane
 mechanisms is outside the scope of this document.<a href="#section-12-4" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -2166,15 +2159,32 @@ for both the <code>End.DT2U.SA</code> and the <code>End.DT2M.SA</code> behaviors
 version.<a href="#section-13-3" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="sec-combined-references">
+<div id="implementation-status">
 <section id="section-14">
+      <h2 id="name-implementation-status">
+<a href="#section-14" class="section-number selfRef">14. </a><a href="#name-implementation-status" class="section-name selfRef">Implementation Status</a>
+      </h2>
+<p id="section-14-1">This section is to be removed before publication.<a href="#section-14-1" class="pilcrow">¶</a></p>
+<p id="section-14-2">A Linux prototype implementation of an SRv6 Layer-2 overlay
+following the architectural model described in this document is
+available and is described in <span>[<a href="#HYDN-MAITI-2026" class="cite xref">HYDN-MAITI-2026</a>]</span>. The prototype
+includes a native bridge-integrated SRv6 Layer-2 tunnel netdevice
+(sr6) and Linux support for the <code>End.DT2U</code> behavior of
+<span>[<a href="#RFC8986" class="cite xref">RFC8986</a>]</span>. The integration of the source-address-based
+service-identification mechanism specified in this document, and
+the corresponding support for the <code>End.DT2U.SA</code> and
+<code>End.DT2M.SA</code> behaviors, is work in progress.<a href="#section-14-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="sec-combined-references">
+<section id="section-15">
       <h2 id="name-references">
-<a href="#section-14" class="section-number selfRef">14. </a><a href="#name-references" class="section-name selfRef">References</a>
+<a href="#section-15" class="section-number selfRef">15. </a><a href="#name-references" class="section-name selfRef">References</a>
       </h2>
 <div id="sec-normative-references">
-<section id="section-14.1">
+<section id="section-15.1">
         <h3 id="name-normative-references">
-<a href="#section-14.1" class="section-number selfRef">14.1. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+<a href="#section-15.1" class="section-number selfRef">15.1. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
         </h3>
 <dl class="references">
 <dt id="RFC8200">[RFC8200]</dt>
@@ -2193,9 +2203,9 @@ version.<a href="#section-13-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="sec-informative-references">
-<section id="section-14.2">
+<section id="section-15.2">
         <h3 id="name-informative-references">
-<a href="#section-14.2" class="section-number selfRef">14.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
+<a href="#section-15.2" class="section-number selfRef">15.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
         </h3>
 <dl class="references">
 <dt id="HYDN-MAITI-2026">[HYDN-MAITI-2026]</dt>
