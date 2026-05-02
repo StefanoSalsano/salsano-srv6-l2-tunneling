@@ -328,7 +328,7 @@ service-instance identification is typically absorbed into the
 Destination Address semantics, which makes scalable Layer-2 tunnel
 identification more difficult.
 
-# Source-Address-Based Service Identification
+# Source-Address-Based Service Identification {#sa-svc-id}
 
 This document proposes to encode the Layer-2 service identifier in the
 24 least significant bits of the outer IPv6 Source Address.
@@ -402,147 +402,175 @@ providing a separate field for compact Layer-2 service identification.
 
 # Relation to Existing SRv6 Behaviors
 
-The mechanism proposed in this document is intended to define a new
-SRv6 Layer-2 decapsulation behavior, denoted as `End.DT2U.SA`, rather
-than to redefine the existing Layer-2 endpoint behaviors of
-{{RFC8986}}.
+The mechanism proposed in this document is intended to define two
+new SRv6 Layer-2 decapsulation behaviors, denoted as `End.DT2U.SA`
+and `End.DT2M.SA`, rather than to redefine the existing Layer-2
+endpoint behaviors of {{RFC8986}}.
 
-Among the Layer-2 behaviors defined in {{RFC8986}}, `End.DT2U`
-provides the closest functional reference for VXLAN-like Ethernet
-overlays. `End.DT2U` performs decapsulation of an SRv6 packet
-carrying an inner Ethernet frame and delivers the frame into a
-local Ethernet domain through Layer-2 table lookup. In current
-SRv6 practice, in particular for SRv6-based EVPN overlay services
-specified in {{RFC9252}} and {{RFC9819}}, the specific Layer-2
-service instance associated with the decapsulating node is
-typically identified through the Destination Address semantics,
-for example by using a service uSID encoded in the Function (and
-optionally Argument) portion of the Service SID.
+Among the Layer-2 behaviors defined in {{RFC8986}}, `End.DT2U` and
+`End.DT2M` provide the closest functional reference for VXLAN-like
+Ethernet overlays. `End.DT2U` performs decapsulation of an SRv6
+packet carrying an inner Ethernet frame and delivers the frame
+into a local Ethernet bridge domain through unicast Layer-2 table
+lookup. `End.DT2M` performs decapsulation and delivery of the
+inner Ethernet frame to the same kind of bridge domain through
+broadcast, unknown-unicast, and multicast (BUM) flooding
+semantics, as commonly required to support traffic such as ARP,
+unknown-MAC frames, and Layer-2 multicast in distributed Layer-2
+overlays. In current SRv6 practice, in particular for SRv6-based
+EVPN overlay services specified in {{RFC9252}} and {{RFC9819}},
+the specific Layer-2 service instance (i.e., the bridge domain)
+associated with the decapsulating node is typically identified
+through the Destination Address semantics, for example by using a
+service uSID encoded in the Function (and optionally Argument)
+portion of the Service SID.
 
-The `End.DT2U.SA` behavior follows the same overall model of
-Layer-2 decapsulation and delivery into a local Ethernet domain,
-but introduces an additional service-identification function. The
+The `End.DT2U.SA` and `End.DT2M.SA` behaviors follow the same
+overall model of Layer-2 decapsulation and delivery into a local
+bridge domain as `End.DT2U` and `End.DT2M`, respectively, but
+introduce an additional service-identification function. The
 egress node and the SRv6 behavior are identified through the outer
 IPv6 Destination Address, while the specific Layer-2 service
-instance is identified by the 24-bit value carried in the least
-significant bits of the outer IPv6 Source Address, as defined in
-this document.
+instance, i.e. the bridge domain, is identified by the 24-bit
+value carried in the least significant bits of the outer IPv6
+Source Address, as defined in this document.
 
 For this reason, `End.DT2U.SA` can be viewed as an enhanced variant
-of `End.DT2U`, in which the Layer-2 service identifier is carried
+of `End.DT2U`, and `End.DT2M.SA` as an enhanced variant of
+`End.DT2M`, in which the bridge-domain identifier is carried
 separately from the Destination Address. This provides a clearer
 separation between endpoint identification and service-instance
 identification, and avoids consuming Destination Address SID space
 for VXLAN-like service identification.
 
-The Layer-2 cross-connect behavior `End.DX2` of {{RFC8986}}, which
-forwards the decapsulated frame toward a specific outgoing Layer-2
-interface, is functionally distinct and is not the primary reference
-for the mechanism defined in this document. Variants of the Layer-2
-delivery behaviors for multicast or other forwarding semantics may
-be defined in future specifications using a similar source-address
-based service-identification model.
+The relationship between `End.DT2M.SA` and `End.DT2U.SA` mirrors
+exactly the relationship between `End.DT2M` and `End.DT2U` in
+{{RFC8986}}. The two behaviors operate on the same set of bridge
+domains at the egress node, identified consistently through the
+24-bit value `SA[23:0]`, and differ only in the forwarding
+semantics applied to the inner Ethernet frame after decapsulation,
+i.e. unicast Layer-2 table lookup for `End.DT2U.SA` versus
+broadcast/flooding for `End.DT2M.SA`. Consequently, the
+encapsulation, the source-address-based service-identification
+mechanism, the applicability constraints, and the deployment
+considerations defined in this document apply identically to both
+behaviors. Throughout this document, statements about
+`End.DT2U.SA` apply equally to `End.DT2M.SA`, except where
+explicitly distinguished.
+
+The control plane mechanisms and BUM tunnel setup procedures
+needed to instantiate Layer-2 BUM distribution across an SRv6
+overlay, including ingress replication and multicast underlay
+distribution as commonly used in VXLAN/EVPN deployments, are
+inherited from the existing SRv6 BGP overlay services framework
+{{RFC9252}}. They are independent of whether the bridge domain is
+identified by a Service SID encoded in the Destination Address
+(per {{RFC9252}}) or by a 24-bit identifier encoded in the Source
+Address (per this document), and are therefore outside the scope
+of this document.
+
+The Layer-2 cross-connect behaviors `End.DX2` and `End.DX2V` of
+{{RFC8986}}, which forward the decapsulated frame toward a
+specific outgoing Layer-2 interface or VLAN, are functionally
+distinct from `End.DT2U`/`End.DT2M` because they do not perform
+bridge-domain Layer-2 forwarding. They are therefore not the
+primary reference for the mechanism defined in this document.
 
 This document therefore assumes that the proposed mechanism is
-specified as a distinct SRv6 behavior, namely `End.DT2U.SA`, rather
-than as a backward-compatible reinterpretation of an existing
-Layer-2 behavior.
+specified as two distinct SRv6 behaviors, namely `End.DT2U.SA` and
+`End.DT2M.SA`, rather than as a backward-compatible
+reinterpretation of existing Layer-2 behaviors.
 
 # Encapsulation Procedure
 
 At the ingress node, the encapsulating tunnel endpoint receives an
-Ethernet frame that must be transported over an SRv6 Layer-2 tunnel.
+Ethernet frame to be transported over an SRv6 Layer-2 tunnel and
+performs the following steps:
 
-The ingress node MUST construct an outer IPv6 header whose Destination
-Address identifies the remote decapsulation node and the SRv6 behavior
-to be executed at that node. In the approach defined by this document,
-the behavior is `End.DT2U.SA`.
-
-The ingress node MUST also assign a 24-bit service identifier to the
-Layer-2 service instance associated with the frame. This identifier is
-encoded in the 24 least significant bits of the outer IPv6 Source
-Address, as defined in this document.
-
-More precisely, let `SA` denote the outer IPv6 Source Address. The
-ingress node MUST set:
-
-~~~
-SERVICE_ID = SA[23:0]
-~~~
-
-The remaining upper 104 bits of the outer IPv6 Source Address,
-i.e. `SA[127:24]`, MUST preserve normal IPv6 Source Address semantics.
-In particular, they MUST be assigned so that the source address remains
-meaningful and reachable in the IPv6 domain where the tunnel is
-deployed.
-
-The resulting encapsulated packet consists of:
-
-* an outer IPv6 header;
-* optionally, an SRH if needed by the SRv6 policy;
-* the original Ethernet frame as inner payload.
-
-The ingress node MUST NOT modify the inner Ethernet frame except as
-required by normal tunnel processing.
-
-Operationally, the ingress node performs the following steps:
-
-1. determine the remote decapsulation endpoint and the corresponding
-   `End.DT2U.SA` service SID;
-2. determine the 24-bit service identifier associated with the Layer-2
-   service instance;
-3. construct the outer IPv6 Source Address so that:
-   * `SA[23:0]` carries the service identifier; and
-   * `SA[127:24]` preserves valid IPv6 Source Address semantics;
-4. encapsulate the Ethernet frame in the SRv6 packet;
+1. determine the remote decapsulation endpoint and the
+   corresponding Service SID, which encodes either the
+   `End.DT2U.SA` behavior, when the inner frame is to be delivered
+   as unicast at the egress, or the `End.DT2M.SA` behavior, when
+   the inner frame is to be delivered as BUM (broadcast,
+   unknown-unicast or multicast) at the egress; this Service SID
+   is encoded in the outer IPv6 Destination Address according to
+   {{RFC8986}}, possibly in compressed form per {{RFC9800}}, and
+   may be signaled over BGP per {{RFC9252}} and {{RFC9819}};
+2. determine the 24-bit service identifier associated with the
+   Layer-2 bridge domain; the mapping between bridge domains and
+   24-bit identifiers is outside the scope of this document, and
+   the same 24-bit value is used consistently for both
+   `End.DT2U.SA` and `End.DT2M.SA`;
+3. construct the outer IPv6 Source Address as defined in
+   {{sa-svc-id}}, that is, with `SA[23:0]` carrying the service
+   identifier and `SA[127:24]` carrying the ingress node's
+   allocated IPv6 prefix;
+4. encapsulate the original Ethernet frame as the inner payload of
+   the resulting IPv6 packet, optionally including a Segment
+   Routing Header {{RFC8754}} as required by the SRv6 policy in
+   use;
 5. forward the packet according to normal SRv6 processing.
 
-The mapping between a Layer-2 service instance and the corresponding
-24-bit service identifier is outside the scope of this document. It may
-be statically provisioned or distributed by a control-plane mechanism.
+The ingress node MUST NOT modify the inner Ethernet frame except
+as required by normal tunnel processing.
+
+A concrete example of the resulting encapsulated packet is shown
+in {{fig-pkt-example}}, with the following sample allocations:
+
+* Ingress node IPv6 prefix: 2001:db8:a:1::/104
+* 24-bit Layer-2 service identifier (bridge domain): 0x010203
+* Egress Service SID encoded in the Destination Address,
+  illustrating either the `End.DT2U.SA` behavior or the
+  `End.DT2M.SA` behavior (illustrative value:
+  2001:db8:b:1:5300:0001::)
+
+~~~
++---------------------------------------------------+
+| Outer IPv6 Header                                 |
+|   Source Address = 2001:db8:a:1::1:0203           |
+|     SA[127:24] = 2001:db8:a:1::/104 (ingress)     |
+|     SA[23:0]   = 0x010203 (SERVICE_ID)            |
+|   Destination Address = Service SID identifying   |
+|     either End.DT2U.SA or End.DT2M.SA behavior    |
+|     (e.g., 2001:db8:b:1:5300:0001::)              |
++---------------------------------------------------+
+| (Optional) Segment Routing Header                 |
++---------------------------------------------------+
+| Inner Ethernet frame                              |
+| (original Layer-2 payload)                        |
++---------------------------------------------------+
+~~~
+{: #fig-pkt-example title="Encapsulated packet structure with sample values."}
 
 # Decapsulation Procedure
 
-When an encapsulated packet reaches the remote endpoint, SRv6
-processing identifies the local behavior to be executed from the outer
-IPv6 Destination Address and, if present, from the active SID in the
-SRH. If the selected behavior is `End.DT2U.SA`, the node performs the
-Layer-2 decapsulation procedure defined in this section.
+At the egress node, when an encapsulated packet is received and
+the SRv6 active SID identifies either the `End.DT2U.SA` or the
+`End.DT2M.SA` behavior, the node performs the following steps:
 
-The egress node MUST extract the 24 least significant bits of the outer
-IPv6 Source Address and interpret them as the service identifier:
+1. extract the 24-bit service identifier from the least
+   significant bits of the outer IPv6 Source Address:
+   `SERVICE_ID = SA[23:0]`;
+2. map the extracted service identifier to the local Layer-2
+   bridge domain to which the inner Ethernet frame is to be
+   delivered;
+3. remove the outer SRv6 encapsulation;
+4. deliver the decapsulated Ethernet frame to the identified
+   bridge domain, applying the forwarding semantics that
+   correspond to the SRv6 behavior identified by the active SID:
 
-~~~
-SERVICE_ID = SA[23:0]
-~~~
-
-The egress node MUST use this 24-bit value to identify the specific
-Layer-2 service instance associated with the packet. The exact use of
-this identifier is deployment-specific, but it is expected to identify,
-for example, a bridge domain, a Layer-2 tunnel instance, or another
-local Layer-2 forwarding context.
-
-After identifying the service instance, the egress node removes the
-outer SRv6 encapsulation and forwards the decapsulated Ethernet frame
-according to the local Layer-2 forwarding context selected by the
-service identifier.
-
-Operationally, the egress node performs the following steps:
-
-1. receive the SRv6 packet and identify the `End.DT2U.SA` behavior;
-2. extract the 24-bit service identifier from the least significant
-   bits of the outer IPv6 Source Address;
-3. map the extracted service identifier to a local Layer-2 service
-   instance;
-4. remove the outer SRv6 encapsulation;
-5. deliver the decapsulated Ethernet frame to the outgoing Layer-2
-   context associated with the identified service instance.
+   * for `End.DT2U.SA`, perform unicast Layer-2 table lookup in
+     the bridge domain on the destination MAC address of the
+     inner frame, as in `End.DT2U` of {{RFC8986}};
+   * for `End.DT2M.SA`, perform broadcast/flooding in the bridge
+     domain, as in `End.DT2M` of {{RFC8986}}.
 
 If the extracted service identifier does not correspond to a valid
-local Layer-2 service instance, the packet MUST be discarded.
+local Layer-2 bridge domain, the packet MUST be discarded.
 
-The detailed error handling, OAM behavior, and optional ICMP reporting
-for this case are left for future versions of this document.
+The detailed error handling, OAM behavior, and optional ICMP
+reporting for this case are left for future versions of this
+document.
 
 
 # Related Work {#related-work}
@@ -765,6 +793,24 @@ to accommodate the maximum expected inner Ethernet frame plus the
 outer IPv6 and SRH overhead, can traverse the domain without
 fragmentation.
 
+## Underlay ECMP and Entropy
+
+The encoding defined in this document places the 24-bit Layer-2
+service identifier in the lower 24 bits of the outer IPv6 Source
+Address. Underlay routers performing equal-cost multipath (ECMP)
+and load balancing on SRv6 traffic typically use the IPv6 Flow
+Label of the outer IPv6 header to compute entropy, in line with
+established SRv6 practice. Hardware fast-path implementations do
+not generally include the lower bits of the Source Address in the
+entropy hash.
+
+As a consequence, the encoding defined in this document neither
+improves nor degrades the underlay ECMP behavior. Operators that
+require flow-level entropy across SRv6 Layer-2 tunnels SHOULD
+populate the Flow Label of the outer IPv6 header at the ingress
+node, independently of the encoded Layer-2 service identifier,
+following normal SRv6 entropy practices.
+
 ## Operational Tooling
 
 Within the limited domain, source-address-based filtering, policy
@@ -805,10 +851,14 @@ mechanisms is outside the scope of this document.
 
 # IANA Considerations
 
-This document proposes a new SRv6 behavior, denoted as `End.DT2U.SA`.
+This document proposes two new SRv6 behaviors, denoted as
+`End.DT2U.SA` and `End.DT2M.SA`, which correspond, respectively,
+to source-address-based service-identification variants of the
+`End.DT2U` and `End.DT2M` behaviors defined in {{RFC8986}}.
 
-If this document is progressed, an IANA allocation will be needed for
-the `End.DT2U.SA` behavior in the relevant SRv6 behavior registry.
+If this document is progressed, IANA allocations will be needed
+for both the `End.DT2U.SA` and the `End.DT2M.SA` behaviors in the
+"SRv6 Endpoint Behaviors" registry.
 
 This document does not request any additional IANA action in this
 version.
