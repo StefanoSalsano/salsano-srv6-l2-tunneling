@@ -1229,7 +1229,10 @@ limited domain.<a href="#section-abstract-2" class="pilcrow">¶</a></p>
                 <p id="section-toc.1-1.11.2.4.1"><a href="#section-11.4" class="auto internal xref">11.4</a>.  <a href="#name-path-mtu-discovery" class="internal xref">Path MTU Discovery</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.5">
-                <p id="section-toc.1-1.11.2.5.1"><a href="#section-11.5" class="auto internal xref">11.5</a>.  <a href="#name-operational-tooling" class="internal xref">Operational Tooling</a></p>
+                <p id="section-toc.1-1.11.2.5.1"><a href="#section-11.5" class="auto internal xref">11.5</a>.  <a href="#name-underlay-ecmp-and-entropy" class="internal xref">Underlay ECMP and Entropy</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.6">
+                <p id="section-toc.1-1.11.2.6.1"><a href="#section-11.6" class="auto internal xref">11.6</a>.  <a href="#name-operational-tooling" class="internal xref">Operational Tooling</a></p>
 </li>
             </ul>
 </li>
@@ -1543,7 +1546,7 @@ identification more difficult.<a href="#section-4.2-9" class="pilcrow">¶</a></p
 </div>
 </section>
 </div>
-<div id="source-address-based-service-identification">
+<div id="sa-svc-id">
 <section id="section-5">
       <h2 id="name-source-address-based-servic">
 <a href="#section-5" class="section-number selfRef">5. </a><a href="#name-source-address-based-servic" class="section-name selfRef">Source-Address-Based Service Identification</a>
@@ -1619,46 +1622,77 @@ providing a separate field for compact Layer-2 service identification.<a href="#
       <h2 id="name-relation-to-existing-srv6-b">
 <a href="#section-6" class="section-number selfRef">6. </a><a href="#name-relation-to-existing-srv6-b" class="section-name selfRef">Relation to Existing SRv6 Behaviors</a>
       </h2>
-<p id="section-6-1">The mechanism proposed in this document is intended to define a new
-SRv6 Layer-2 decapsulation behavior, denoted as <code>End.DT2U.SA</code>, rather
-than to redefine the existing Layer-2 endpoint behaviors of
-<span>[<a href="#RFC8986" class="cite xref">RFC8986</a>]</span>.<a href="#section-6-1" class="pilcrow">¶</a></p>
-<p id="section-6-2">Among the Layer-2 behaviors defined in <span>[<a href="#RFC8986" class="cite xref">RFC8986</a>]</span>, <code>End.DT2U</code>
-provides the closest functional reference for VXLAN-like Ethernet
-overlays. <code>End.DT2U</code> performs decapsulation of an SRv6 packet
-carrying an inner Ethernet frame and delivers the frame into a
-local Ethernet domain through Layer-2 table lookup. In current
-SRv6 practice, in particular for SRv6-based EVPN overlay services
-specified in <span>[<a href="#RFC9252" class="cite xref">RFC9252</a>]</span> and <span>[<a href="#RFC9819" class="cite xref">RFC9819</a>]</span>, the specific Layer-2
-service instance associated with the decapsulating node is
-typically identified through the Destination Address semantics,
-for example by using a service uSID encoded in the Function (and
-optionally Argument) portion of the Service SID.<a href="#section-6-2" class="pilcrow">¶</a></p>
-<p id="section-6-3">The <code>End.DT2U.SA</code> behavior follows the same overall model of
-Layer-2 decapsulation and delivery into a local Ethernet domain,
-but introduces an additional service-identification function. The
+<p id="section-6-1">The mechanism proposed in this document is intended to define two
+new SRv6 Layer-2 decapsulation behaviors, denoted as <code>End.DT2U.SA</code>
+and <code>End.DT2M.SA</code>, rather than to redefine the existing Layer-2
+endpoint behaviors of <span>[<a href="#RFC8986" class="cite xref">RFC8986</a>]</span>.<a href="#section-6-1" class="pilcrow">¶</a></p>
+<p id="section-6-2">Among the Layer-2 behaviors defined in <span>[<a href="#RFC8986" class="cite xref">RFC8986</a>]</span>, <code>End.DT2U</code> and
+<code>End.DT2M</code> provide the closest functional reference for VXLAN-like
+Ethernet overlays. <code>End.DT2U</code> performs decapsulation of an SRv6
+packet carrying an inner Ethernet frame and delivers the frame
+into a local Ethernet bridge domain through unicast Layer-2 table
+lookup. <code>End.DT2M</code> performs decapsulation and delivery of the
+inner Ethernet frame to the same kind of bridge domain through
+broadcast, unknown-unicast, and multicast (BUM) flooding
+semantics, as commonly required to support traffic such as ARP,
+unknown-MAC frames, and Layer-2 multicast in distributed Layer-2
+overlays. In current SRv6 practice, in particular for SRv6-based
+EVPN overlay services specified in <span>[<a href="#RFC9252" class="cite xref">RFC9252</a>]</span> and <span>[<a href="#RFC9819" class="cite xref">RFC9819</a>]</span>,
+the specific Layer-2 service instance (i.e., the bridge domain)
+associated with the decapsulating node is typically identified
+through the Destination Address semantics, for example by using a
+service uSID encoded in the Function (and optionally Argument)
+portion of the Service SID.<a href="#section-6-2" class="pilcrow">¶</a></p>
+<p id="section-6-3">The <code>End.DT2U.SA</code> and <code>End.DT2M.SA</code> behaviors follow the same
+overall model of Layer-2 decapsulation and delivery into a local
+bridge domain as <code>End.DT2U</code> and <code>End.DT2M</code>, respectively, but
+introduce an additional service-identification function. The
 egress node and the SRv6 behavior are identified through the outer
 IPv6 Destination Address, while the specific Layer-2 service
-instance is identified by the 24-bit value carried in the least
-significant bits of the outer IPv6 Source Address, as defined in
-this document.<a href="#section-6-3" class="pilcrow">¶</a></p>
+instance, i.e. the bridge domain, is identified by the 24-bit
+value carried in the least significant bits of the outer IPv6
+Source Address, as defined in this document.<a href="#section-6-3" class="pilcrow">¶</a></p>
 <p id="section-6-4">For this reason, <code>End.DT2U.SA</code> can be viewed as an enhanced variant
-of <code>End.DT2U</code>, in which the Layer-2 service identifier is carried
+of <code>End.DT2U</code>, and <code>End.DT2M.SA</code> as an enhanced variant of
+<code>End.DT2M</code>, in which the bridge-domain identifier is carried
 separately from the Destination Address. This provides a clearer
 separation between endpoint identification and service-instance
 identification, and avoids consuming Destination Address SID space
 for VXLAN-like service identification.<a href="#section-6-4" class="pilcrow">¶</a></p>
-<p id="section-6-5">The Layer-2 cross-connect behavior <code>End.DX2</code> of <span>[<a href="#RFC8986" class="cite xref">RFC8986</a>]</span>, which
-forwards the decapsulated frame toward a specific outgoing Layer-2
-interface, is functionally distinct and is not the primary reference
-for the mechanism defined in this document. Variants of the Layer-2
-delivery behaviors for multicast or other forwarding semantics may
-be defined in future specifications using a similar source-address
-based service-identification model.<a href="#section-6-5" class="pilcrow">¶</a></p>
-<p id="section-6-6">This document therefore assumes that the proposed mechanism is
-specified as a distinct SRv6 behavior, namely <code>End.DT2U.SA</code>, rather
-than as a backward-compatible reinterpretation of an existing
-Layer-2 behavior.<a href="#section-6-6" class="pilcrow">¶</a></p>
+<p id="section-6-5">The relationship between <code>End.DT2M.SA</code> and <code>End.DT2U.SA</code> mirrors
+exactly the relationship between <code>End.DT2M</code> and <code>End.DT2U</code> in
+<span>[<a href="#RFC8986" class="cite xref">RFC8986</a>]</span>. The two behaviors operate on the same set of bridge
+domains at the egress node, identified consistently through the
+24-bit value <code>SA[23:0]</code>, and differ only in the forwarding
+semantics applied to the inner Ethernet frame after decapsulation,
+i.e. unicast Layer-2 table lookup for <code>End.DT2U.SA</code> versus
+broadcast/flooding for <code>End.DT2M.SA</code>. Consequently, the
+encapsulation, the source-address-based service-identification
+mechanism, the applicability constraints, and the deployment
+considerations defined in this document apply identically to both
+behaviors. Throughout this document, statements about
+<code>End.DT2U.SA</code> apply equally to <code>End.DT2M.SA</code>, except where
+explicitly distinguished.<a href="#section-6-5" class="pilcrow">¶</a></p>
+<p id="section-6-6">The control plane mechanisms and BUM tunnel setup procedures
+needed to instantiate Layer-2 BUM distribution across an SRv6
+overlay, including ingress replication and multicast underlay
+distribution as commonly used in VXLAN/EVPN deployments, are
+inherited from the existing SRv6 BGP overlay services framework
+<span>[<a href="#RFC9252" class="cite xref">RFC9252</a>]</span>. They are independent of whether the bridge domain is
+identified by a Service SID encoded in the Destination Address
+(per <span>[<a href="#RFC9252" class="cite xref">RFC9252</a>]</span>) or by a 24-bit identifier encoded in the Source
+Address (per this document), and are therefore outside the scope
+of this document.<a href="#section-6-6" class="pilcrow">¶</a></p>
+<p id="section-6-7">The Layer-2 cross-connect behaviors <code>End.DX2</code> and <code>End.DX2V</code> of
+<span>[<a href="#RFC8986" class="cite xref">RFC8986</a>]</span>, which forward the decapsulated frame toward a
+specific outgoing Layer-2 interface or VLAN, are functionally
+distinct from <code>End.DT2U</code>/<code>End.DT2M</code> because they do not perform
+bridge-domain Layer-2 forwarding. They are therefore not the
+primary reference for the mechanism defined in this document.<a href="#section-6-7" class="pilcrow">¶</a></p>
+<p id="section-6-8">This document therefore assumes that the proposed mechanism is
+specified as two distinct SRv6 behaviors, namely <code>End.DT2U.SA</code> and
+<code>End.DT2M.SA</code>, rather than as a backward-compatible
+reinterpretation of existing Layer-2 behaviors.<a href="#section-6-8" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="encapsulation-procedure">
@@ -1667,72 +1701,85 @@ Layer-2 behavior.<a href="#section-6-6" class="pilcrow">¶</a></p>
 <a href="#section-7" class="section-number selfRef">7. </a><a href="#name-encapsulation-procedure" class="section-name selfRef">Encapsulation Procedure</a>
       </h2>
 <p id="section-7-1">At the ingress node, the encapsulating tunnel endpoint receives an
-Ethernet frame that must be transported over an SRv6 Layer-2 tunnel.<a href="#section-7-1" class="pilcrow">¶</a></p>
-<p id="section-7-2">The ingress node MUST construct an outer IPv6 header whose Destination
-Address identifies the remote decapsulation node and the SRv6 behavior
-to be executed at that node. In the approach defined by this document,
-the behavior is <code>End.DT2U.SA</code>.<a href="#section-7-2" class="pilcrow">¶</a></p>
-<p id="section-7-3">The ingress node MUST also assign a 24-bit service identifier to the
-Layer-2 service instance associated with the frame. This identifier is
-encoded in the 24 least significant bits of the outer IPv6 Source
-Address, as defined in this document.<a href="#section-7-3" class="pilcrow">¶</a></p>
-<p id="section-7-4">More precisely, let <code>SA</code> denote the outer IPv6 Source Address. The
-ingress node MUST set:<a href="#section-7-4" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-7-5">
-<pre>
-SERVICE_ID = SA[23:0]
-</pre><a href="#section-7-5" class="pilcrow">¶</a>
-</div>
-<p id="section-7-6">The remaining upper 104 bits of the outer IPv6 Source Address,
-i.e. <code>SA[127:24]</code>, MUST preserve normal IPv6 Source Address semantics.
-In particular, they MUST be assigned so that the source address remains
-meaningful and reachable in the IPv6 domain where the tunnel is
-deployed.<a href="#section-7-6" class="pilcrow">¶</a></p>
-<p id="section-7-7">The resulting encapsulated packet consists of:<a href="#section-7-7" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-7-8.1">
-          <p id="section-7-8.1.1">an outer IPv6 header;<a href="#section-7-8.1.1" class="pilcrow">¶</a></p>
+Ethernet frame to be transported over an SRv6 Layer-2 tunnel and
+performs the following steps:<a href="#section-7-1" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-7-2">
+<li id="section-7-2.1">
+          <p id="section-7-2.1.1">determine the remote decapsulation endpoint and the
+corresponding Service SID, which encodes either the
+<code>End.DT2U.SA</code> behavior, when the inner frame is to be delivered
+as unicast at the egress, or the <code>End.DT2M.SA</code> behavior, when
+the inner frame is to be delivered as BUM (broadcast,
+unknown-unicast or multicast) at the egress; this Service SID
+is encoded in the outer IPv6 Destination Address according to
+<span>[<a href="#RFC8986" class="cite xref">RFC8986</a>]</span>, possibly in compressed form per <span>[<a href="#RFC9800" class="cite xref">RFC9800</a>]</span>, and
+may be signaled over BGP per <span>[<a href="#RFC9252" class="cite xref">RFC9252</a>]</span> and <span>[<a href="#RFC9819" class="cite xref">RFC9819</a>]</span>;<a href="#section-7-2.1.1" class="pilcrow">¶</a></p>
 </li>
-        <li class="normal" id="section-7-8.2">
-          <p id="section-7-8.2.1">optionally, an SRH if needed by the SRv6 policy;<a href="#section-7-8.2.1" class="pilcrow">¶</a></p>
+        <li id="section-7-2.2">
+          <p id="section-7-2.2.1">determine the 24-bit service identifier associated with the
+Layer-2 bridge domain; the mapping between bridge domains and
+24-bit identifiers is outside the scope of this document, and
+the same 24-bit value is used consistently for both
+<code>End.DT2U.SA</code> and <code>End.DT2M.SA</code>;<a href="#section-7-2.2.1" class="pilcrow">¶</a></p>
 </li>
-        <li class="normal" id="section-7-8.3">
-          <p id="section-7-8.3.1">the original Ethernet frame as inner payload.<a href="#section-7-8.3.1" class="pilcrow">¶</a></p>
+        <li id="section-7-2.3">
+          <p id="section-7-2.3.1">construct the outer IPv6 Source Address as defined in
+<a href="#sa-svc-id" class="auto internal xref">Section 5</a>, that is, with <code>SA[23:0]</code> carrying the service
+identifier and <code>SA[127:24]</code> carrying the ingress node's
+allocated IPv6 prefix;<a href="#section-7-2.3.1" class="pilcrow">¶</a></p>
 </li>
-      </ul>
-<p id="section-7-9">The ingress node MUST NOT modify the inner Ethernet frame except as
-required by normal tunnel processing.<a href="#section-7-9" class="pilcrow">¶</a></p>
-<p id="section-7-10">Operationally, the ingress node performs the following steps:<a href="#section-7-10" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-7-11">
-<li id="section-7-11.1">
-          <p id="section-7-11.1.1">determine the remote decapsulation endpoint and the corresponding
-<code>End.DT2U.SA</code> service SID;<a href="#section-7-11.1.1" class="pilcrow">¶</a></p>
+        <li id="section-7-2.4">
+          <p id="section-7-2.4.1">encapsulate the original Ethernet frame as the inner payload of
+the resulting IPv6 packet, optionally including a Segment
+Routing Header <span>[<a href="#RFC8754" class="cite xref">RFC8754</a>]</span> as required by the SRv6 policy in
+use;<a href="#section-7-2.4.1" class="pilcrow">¶</a></p>
 </li>
-        <li id="section-7-11.2">
-          <p id="section-7-11.2.1">determine the 24-bit service identifier associated with the Layer-2
-service instance;<a href="#section-7-11.2.1" class="pilcrow">¶</a></p>
-</li>
-        <li id="section-7-11.3">
-          <p id="section-7-11.3.1">construct the outer IPv6 Source Address so that:<a href="#section-7-11.3.1" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-7-11.3.2.1">
-              <p id="section-7-11.3.2.1.1"><code>SA[23:0]</code> carries the service identifier; and<a href="#section-7-11.3.2.1.1" class="pilcrow">¶</a></p>
-</li>
-            <li class="normal" id="section-7-11.3.2.2">
-              <p id="section-7-11.3.2.2.1"><code>SA[127:24]</code> preserves valid IPv6 Source Address semantics;<a href="#section-7-11.3.2.2.1" class="pilcrow">¶</a></p>
-</li>
-          </ul>
-</li>
-        <li id="section-7-11.4">
-          <p id="section-7-11.4.1">encapsulate the Ethernet frame in the SRv6 packet;<a href="#section-7-11.4.1" class="pilcrow">¶</a></p>
-</li>
-        <li id="section-7-11.5">
-          <p id="section-7-11.5.1">forward the packet according to normal SRv6 processing.<a href="#section-7-11.5.1" class="pilcrow">¶</a></p>
+        <li id="section-7-2.5">
+          <p id="section-7-2.5.1">forward the packet according to normal SRv6 processing.<a href="#section-7-2.5.1" class="pilcrow">¶</a></p>
 </li>
       </ol>
-<p id="section-7-12">The mapping between a Layer-2 service instance and the corresponding
-24-bit service identifier is outside the scope of this document. It may
-be statically provisioned or distributed by a control-plane mechanism.<a href="#section-7-12" class="pilcrow">¶</a></p>
+<p id="section-7-3">The ingress node MUST NOT modify the inner Ethernet frame except
+as required by normal tunnel processing.<a href="#section-7-3" class="pilcrow">¶</a></p>
+<p id="section-7-4">A concrete example of the resulting encapsulated packet is shown
+in <a href="#fig-pkt-example" class="auto internal xref">Figure 2</a>, with the following sample allocations:<a href="#section-7-4" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-7-5.1">
+          <p id="section-7-5.1.1">Ingress node IPv6 prefix: 2001:db8:a:1::/104<a href="#section-7-5.1.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-7-5.2">
+          <p id="section-7-5.2.1">24-bit Layer-2 service identifier (bridge domain): 0x010203<a href="#section-7-5.2.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-7-5.3">
+          <p id="section-7-5.3.1">Egress Service SID encoded in the Destination Address,
+illustrating either the <code>End.DT2U.SA</code> behavior or the
+<code>End.DT2M.SA</code> behavior (illustrative value:
+2001:db8:b:1:5300:0001::)<a href="#section-7-5.3.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+<span id="name-encapsulated-packet-structu"></span><div id="fig-pkt-example">
+<figure id="figure-2">
+        <div class="alignLeft art-text artwork" id="section-7-6.1">
+<pre>
++---------------------------------------------------+
+| Outer IPv6 Header                                 |
+|   Source Address = 2001:db8:a:1::1:0203           |
+|     SA[127:24] = 2001:db8:a:1::/104 (ingress)     |
+|     SA[23:0]   = 0x010203 (SERVICE_ID)            |
+|   Destination Address = Service SID identifying   |
+|     either End.DT2U.SA or End.DT2M.SA behavior    |
+|     (e.g., 2001:db8:b:1:5300:0001::)              |
++---------------------------------------------------+
+| (Optional) Segment Routing Header                 |
++---------------------------------------------------+
+| Inner Ethernet frame                              |
+| (original Layer-2 payload)                        |
++---------------------------------------------------+
+</pre>
+</div>
+<figcaption><a href="#figure-2" class="selfRef">Figure 2</a>:
+<a href="#name-encapsulated-packet-structu" class="selfRef">Encapsulated packet structure with sample values.</a>
+        </figcaption></figure>
+</div>
 </section>
 </div>
 <div id="decapsulation-procedure">
@@ -1740,52 +1787,45 @@ be statically provisioned or distributed by a control-plane mechanism.<a href="#
       <h2 id="name-decapsulation-procedure">
 <a href="#section-8" class="section-number selfRef">8. </a><a href="#name-decapsulation-procedure" class="section-name selfRef">Decapsulation Procedure</a>
       </h2>
-<p id="section-8-1">When an encapsulated packet reaches the remote endpoint, SRv6
-processing identifies the local behavior to be executed from the outer
-IPv6 Destination Address and, if present, from the active SID in the
-SRH. If the selected behavior is <code>End.DT2U.SA</code>, the node performs the
-Layer-2 decapsulation procedure defined in this section.<a href="#section-8-1" class="pilcrow">¶</a></p>
-<p id="section-8-2">The egress node MUST extract the 24 least significant bits of the outer
-IPv6 Source Address and interpret them as the service identifier:<a href="#section-8-2" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-8-3">
-<pre>
-SERVICE_ID = SA[23:0]
-</pre><a href="#section-8-3" class="pilcrow">¶</a>
-</div>
-<p id="section-8-4">The egress node MUST use this 24-bit value to identify the specific
-Layer-2 service instance associated with the packet. The exact use of
-this identifier is deployment-specific, but it is expected to identify,
-for example, a bridge domain, a Layer-2 tunnel instance, or another
-local Layer-2 forwarding context.<a href="#section-8-4" class="pilcrow">¶</a></p>
-<p id="section-8-5">After identifying the service instance, the egress node removes the
-outer SRv6 encapsulation and forwards the decapsulated Ethernet frame
-according to the local Layer-2 forwarding context selected by the
-service identifier.<a href="#section-8-5" class="pilcrow">¶</a></p>
-<p id="section-8-6">Operationally, the egress node performs the following steps:<a href="#section-8-6" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-8-7">
-<li id="section-8-7.1">
-          <p id="section-8-7.1.1">receive the SRv6 packet and identify the <code>End.DT2U.SA</code> behavior;<a href="#section-8-7.1.1" class="pilcrow">¶</a></p>
+<p id="section-8-1">At the egress node, when an encapsulated packet is received and
+the SRv6 active SID identifies either the <code>End.DT2U.SA</code> or the
+<code>End.DT2M.SA</code> behavior, the node performs the following steps:<a href="#section-8-1" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-8-2">
+<li id="section-8-2.1">
+          <p id="section-8-2.1.1">extract the 24-bit service identifier from the least
+significant bits of the outer IPv6 Source Address:
+<code>SERVICE_ID = SA[23:0]</code>;<a href="#section-8-2.1.1" class="pilcrow">¶</a></p>
 </li>
-        <li id="section-8-7.2">
-          <p id="section-8-7.2.1">extract the 24-bit service identifier from the least significant
-bits of the outer IPv6 Source Address;<a href="#section-8-7.2.1" class="pilcrow">¶</a></p>
+        <li id="section-8-2.2">
+          <p id="section-8-2.2.1">map the extracted service identifier to the local Layer-2
+bridge domain to which the inner Ethernet frame is to be
+delivered;<a href="#section-8-2.2.1" class="pilcrow">¶</a></p>
 </li>
-        <li id="section-8-7.3">
-          <p id="section-8-7.3.1">map the extracted service identifier to a local Layer-2 service
-instance;<a href="#section-8-7.3.1" class="pilcrow">¶</a></p>
+        <li id="section-8-2.3">
+          <p id="section-8-2.3.1">remove the outer SRv6 encapsulation;<a href="#section-8-2.3.1" class="pilcrow">¶</a></p>
 </li>
-        <li id="section-8-7.4">
-          <p id="section-8-7.4.1">remove the outer SRv6 encapsulation;<a href="#section-8-7.4.1" class="pilcrow">¶</a></p>
+        <li id="section-8-2.4">
+          <p id="section-8-2.4.1">deliver the decapsulated Ethernet frame to the identified
+bridge domain, applying the forwarding semantics that
+correspond to the SRv6 behavior identified by the active SID:<a href="#section-8-2.4.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-8-2.4.2.1">
+              <p id="section-8-2.4.2.1.1">for <code>End.DT2U.SA</code>, perform unicast Layer-2 table lookup in
+the bridge domain on the destination MAC address of the
+inner frame, as in <code>End.DT2U</code> of <span>[<a href="#RFC8986" class="cite xref">RFC8986</a>]</span>;<a href="#section-8-2.4.2.1.1" class="pilcrow">¶</a></p>
 </li>
-        <li id="section-8-7.5">
-          <p id="section-8-7.5.1">deliver the decapsulated Ethernet frame to the outgoing Layer-2
-context associated with the identified service instance.<a href="#section-8-7.5.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-8-2.4.2.2">
+              <p id="section-8-2.4.2.2.1">for <code>End.DT2M.SA</code>, perform broadcast/flooding in the bridge
+domain, as in <code>End.DT2M</code> of <span>[<a href="#RFC8986" class="cite xref">RFC8986</a>]</span>.<a href="#section-8-2.4.2.2.1" class="pilcrow">¶</a></p>
+</li>
+          </ul>
 </li>
       </ol>
-<p id="section-8-8">If the extracted service identifier does not correspond to a valid
-local Layer-2 service instance, the packet MUST be discarded.<a href="#section-8-8" class="pilcrow">¶</a></p>
-<p id="section-8-9">The detailed error handling, OAM behavior, and optional ICMP reporting
-for this case are left for future versions of this document.<a href="#section-8-9" class="pilcrow">¶</a></p>
+<p id="section-8-3">If the extracted service identifier does not correspond to a valid
+local Layer-2 bridge domain, the packet MUST be discarded.<a href="#section-8-3" class="pilcrow">¶</a></p>
+<p id="section-8-4">The detailed error handling, OAM behavior, and optional ICMP
+reporting for this case are left for future versions of this
+document.<a href="#section-8-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="related-work">
@@ -2031,12 +2071,33 @@ outer IPv6 and SRH overhead, can traverse the domain without
 fragmentation.<a href="#section-11.4-3" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="operational-tooling">
+<div id="underlay-ecmp-and-entropy">
 <section id="section-11.5">
-        <h3 id="name-operational-tooling">
-<a href="#section-11.5" class="section-number selfRef">11.5. </a><a href="#name-operational-tooling" class="section-name selfRef">Operational Tooling</a>
+        <h3 id="name-underlay-ecmp-and-entropy">
+<a href="#section-11.5" class="section-number selfRef">11.5. </a><a href="#name-underlay-ecmp-and-entropy" class="section-name selfRef">Underlay ECMP and Entropy</a>
         </h3>
-<p id="section-11.5-1">Within the limited domain, source-address-based filtering, policy
+<p id="section-11.5-1">The encoding defined in this document places the 24-bit Layer-2
+service identifier in the lower 24 bits of the outer IPv6 Source
+Address. Underlay routers performing equal-cost multipath (ECMP)
+and load balancing on SRv6 traffic typically use the IPv6 Flow
+Label of the outer IPv6 header to compute entropy, in line with
+established SRv6 practice. Hardware fast-path implementations do
+not generally include the lower bits of the Source Address in the
+entropy hash.<a href="#section-11.5-1" class="pilcrow">¶</a></p>
+<p id="section-11.5-2">As a consequence, the encoding defined in this document neither
+improves nor degrades the underlay ECMP behavior. Operators that
+require flow-level entropy across SRv6 Layer-2 tunnels SHOULD
+populate the Flow Label of the outer IPv6 header at the ingress
+node, independently of the encoded Layer-2 service identifier,
+following normal SRv6 entropy practices.<a href="#section-11.5-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="operational-tooling">
+<section id="section-11.6">
+        <h3 id="name-operational-tooling">
+<a href="#section-11.6" class="section-number selfRef">11.6. </a><a href="#name-operational-tooling" class="section-name selfRef">Operational Tooling</a>
+        </h3>
+<p id="section-11.6-1">Within the limited domain, source-address-based filtering, policy
 enforcement, accounting, and monitoring tools may be exposed to
 outer IPv6 Source Addresses that share a common upper prefix and
 differ in the lower 24 bits according to the encoded Layer-2
@@ -2044,7 +2105,7 @@ service identifier. Operational tools deployed within the domain
 SHOULD be configured to interpret such addresses consistently with
 the encoding defined in this document, so that packets belonging
 to different Layer-2 service instances are not aggregated or
-distinguished in unexpected ways.<a href="#section-11.5-1" class="pilcrow">¶</a></p>
+distinguished in unexpected ways.<a href="#section-11.6-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -2081,9 +2142,13 @@ mechanisms is outside the scope of this document.<a href="#section-12-4" class="
       <h2 id="name-iana-considerations">
 <a href="#section-13" class="section-number selfRef">13. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
       </h2>
-<p id="section-13-1">This document proposes a new SRv6 behavior, denoted as <code>End.DT2U.SA</code>.<a href="#section-13-1" class="pilcrow">¶</a></p>
-<p id="section-13-2">If this document is progressed, an IANA allocation will be needed for
-the <code>End.DT2U.SA</code> behavior in the relevant SRv6 behavior registry.<a href="#section-13-2" class="pilcrow">¶</a></p>
+<p id="section-13-1">This document proposes two new SRv6 behaviors, denoted as
+<code>End.DT2U.SA</code> and <code>End.DT2M.SA</code>, which correspond, respectively,
+to source-address-based service-identification variants of the
+<code>End.DT2U</code> and <code>End.DT2M</code> behaviors defined in <span>[<a href="#RFC8986" class="cite xref">RFC8986</a>]</span>.<a href="#section-13-1" class="pilcrow">¶</a></p>
+<p id="section-13-2">If this document is progressed, IANA allocations will be needed
+for both the <code>End.DT2U.SA</code> and the <code>End.DT2M.SA</code> behaviors in the
+"SRv6 Endpoint Behaviors" registry.<a href="#section-13-2" class="pilcrow">¶</a></p>
 <p id="section-13-3">This document does not request any additional IANA action in this
 version.<a href="#section-13-3" class="pilcrow">¶</a></p>
 </section>
